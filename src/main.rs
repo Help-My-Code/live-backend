@@ -1,23 +1,19 @@
-use std::future::Future;
-use std::io::Error;
-use std::net::SocketAddr;
 use axum::{
-    Router,
-    routing::{get, get_service},
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         TypedHeader,
     },
+    http::StatusCode,
     response::IntoResponse,
-    http::StatusCode
+    routing::{get, get_service},
+    Router,
 };
+use std::net::SocketAddr;
 use tower_http::{
+    services::ServeDir,
     trace::{DefaultMakeSpan, TraceLayer},
 };
-use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-
 
 #[tokio::main]
 async fn main() {
@@ -29,25 +25,35 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let logger = TraceLayer::new_for_http()
-        .make_span_with(DefaultMakeSpan::default().include_headers(true));
+    // build our application with some routes
     let app = Router::new()
-        .route("/", get_service(
-        ServeDir::new("assets").append_index_html_on_directories(true),
-        ).handle_error(handle_unexpected_error))
-        .route("/ws", get(ws_handler))
-        .layer(
-        logger,
-        );
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3030));
-    axum::Server::bind(&addr).serve(app.into_make_service()).await.unwrap();
-}
-
-async fn handle_unexpected_error(error: Error) -> (StatusCode, String) {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Unhandled internal error: {}", error),
+        .fallback(
+            get_service(
+                ServeDir::new("assets").append_index_html_on_directories(true),
+            )
+                .handle_error(|error: std::io::Error| async move {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Unhandled internal error: {}", error),
+                    )
+                }),
         )
+        // routes are matched from bottom to top, so we have to put `nest` at the
+        // top since it matches all routes
+        .route("/ws", get(ws_handler))
+        // logging so we can see whats going on
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::default().include_headers(true)),
+        );
+
+    // run it with hyper
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    tracing::debug!("listening on {}", addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
 
 async fn ws_handler(
@@ -99,9 +105,4 @@ async fn handle_socket(mut socket: WebSocket) {
         }
         tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     }
-}
-
-
-async fn handler() -> String {
-    String::from("Hello, world!")
 }
