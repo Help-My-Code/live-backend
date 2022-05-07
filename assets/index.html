@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>Chat WebSocket</h1>
+<script>
+    const socket = new WebSocket('ws://localhost:3000/ws');
+
+    socket.addEventListener('open', function (event) {
+        socket.send('Hello Server!');
+    });
+
+    socket.addEventListener('message', function (event) {
+        console.log('Message from server ', event.data);
+    });
+</script>
+</body>
+</html>
