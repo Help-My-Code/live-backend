@@ -1,13 +1,16 @@
 use actix::Addr;
-use actix_web::{App, get, HttpRequest, HttpResponse, HttpServer, middleware, web};
-use actix_web::web::get;
+use actix_web::{App, Error, HttpRequest, HttpResponse, HttpServer, middleware, web};
 use actix_web_actors::ws;
+use code_session::{CodeServer, CodeSession};
+use rand::random;
 
 mod code_session;
 
 async fn websocket_handler(req: HttpRequest, stream: web::Payload,
-    srv: web::Data<Addr<code_session::CodeSession>>) -> HttpResponse {
+    srv: web::Data<Addr<CodeServer>>) -> Result<HttpResponse, Error> {
     println!("{:?}", req);
+    let code_session = CodeSession::new(random::<usize>(), srv.get_ref().clone());
+    ws::start(code_session, &req, stream)
 }
 
 
@@ -18,7 +21,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .wrap(middleware::Logger::default())
-            .route("/ws". web::get().to(websocket_handler))
+            .route("/ws", web::get().to(websocket_handler))
             .service(web::resource("/").to(|| async {
                 HttpResponse::Ok().body("Hello world!")
             }))
