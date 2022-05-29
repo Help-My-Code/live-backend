@@ -134,6 +134,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
                 self.hb = Instant::now();
             }
             Ok(ws::Message::Text(text)) => {
+                println!("Websocket Server received {:?}", text);
                 self.addr.do_send(CodeUpdate {
                     id: self.id,
                     code: text.parse().unwrap(),

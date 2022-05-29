@@ -1,6 +1,7 @@
 use actix::Addr;
 use actix_web::{App, Error, HttpRequest, HttpResponse, HttpServer, middleware, web};
 use actix_web_actors::ws;
+use actix::Actor;
 use code_session::{CodeServer, CodeSession};
 use rand::random;
 
@@ -26,7 +27,7 @@ async fn main() -> std::io::Result<()> {
 
     let code_server = CodeServer::new().start();
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(code_server.clone()))
             .wrap(middleware::Logger::default())
