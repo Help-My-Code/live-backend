@@ -11,10 +11,16 @@ pub struct CodeUpdate {
     pub code: String,
 }
 
+// impl CodeUpdate {
+//     pub fn new(id: usize, code: String) -> Self {
+//         CodeUpdate { id, code }
+//     }
+// }
+
 #[derive(Message)]
 #[rtype(usize)]
 pub struct Connect {
-    pub addr: Recipient<CodeUpdate>,
+    pub addr: Recipient<Message>,
 }
 
 #[derive(Message)]

@@ -39,11 +39,12 @@ impl CodeSession {
 }
 
 impl Handler<event::Message> for CodeSession {
-    type Result = ();
+    type Result = usize;
 
-    fn handle(&mut self, msg: event::Message, ctx: &mut Self::Context) {
+    fn handle(&mut self, msg: event::Message, ctx: &mut Self::Context) -> usize {
         println!("Websocket Client {} received: {:?}", self.id, msg);
         ctx.text(msg.0);
+        self.id
     }
 }
 
@@ -51,6 +52,8 @@ impl Actor for CodeSession {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
+        self.hb(ctx);
+
         let addr = ctx.address();
         self.addr
             .send(Connect {

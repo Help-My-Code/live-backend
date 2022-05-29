@@ -4,13 +4,14 @@ use rand::prelude::ThreadRng;
 use actix::prelude::*;
 use actix::Recipient;
 
+use crate::event;
 use crate::event::CodeUpdate;
 use crate::event::Connect;
 use crate::event::Disconnect;
 
 
 pub struct CodeServer {
-  sessions: HashMap<usize, Recipient<CodeUpdate>>,
+  sessions: HashMap<usize, Recipient<event::Message>>,
   rng: ThreadRng,
 }
 
@@ -20,6 +21,17 @@ impl CodeServer {
           sessions: HashMap::new(),
           rng: rand::thread_rng(),
       }
+  }
+
+  fn send_update_code(&self, message: &str, skip_id: usize) {
+    
+    for (id, _addr) in &self.sessions {
+      if *id != skip_id {
+        if let Some(addr) = self.sessions.get(&id) {
+          let _ = addr.do_send(event::Message(message.to_string()));
+        }
+      }
+    }
   }
 }
 
@@ -51,8 +63,7 @@ impl Handler<Disconnect> for CodeServer {
 impl Handler<CodeUpdate> for CodeServer {
   type Result = ();
 
-  fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
-      // ctx.text(msg.code);
-      // TODO send message to all clients
+  fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
+      self.send_update_code( &msg.code, msg.id );
   }
 }

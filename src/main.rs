@@ -2,7 +2,8 @@ use actix::Addr;
 use actix_web::{App, Error, HttpRequest, HttpResponse, HttpServer, middleware, web};
 use actix_web_actors::ws;
 use actix::Actor;
-use code_session::{CodeServer, CodeSession};
+use code_server::CodeServer;
+use code_session::CodeSession;
 use rand::random;
 
 mod event;
