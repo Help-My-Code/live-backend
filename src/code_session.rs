@@ -20,8 +20,8 @@ pub struct Disconnect {
 #[derive(Debug, Message)]
 #[rtype(result = "()")]
 pub struct CodeUpdate {
+    pub id: usize,
     pub code: String,
-    pub session: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -44,26 +44,27 @@ impl CodeSession {
             addr,
         }
     }
-    // fn hb(&self, ctx: &mut ws::WebsocketContext<Self>) {
-    //     ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
-    //         if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
-    //             println!("Websocket Client heartbeat failed, disconnecting!");
+    fn hb(&self, ctx: &mut ws::WebsocketContext<Self>) {
+        ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
+            if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
+                println!("Websocket Client heartbeat failed, disconnecting!");
 
-    //             // notify chat server
-    //             act.addr.do_send(Disconnect { id: act.id.clone() });
-    //             ctx.stop();
-    //             return;
-    //         }
+                // notify chat server
+                act.addr.do_send(Disconnect { id: act.id.clone() });
+                ctx.stop();
+                return;
+            }
 
-    //         ctx.ping(b"");
-    //     });
-    // }
+            ctx.ping(b"");
+        });
+    }
 }
 
 impl Handler<Connect> for CodeServer {
     type Result = usize;
 
     fn handle(&mut self, msg: Connect, _ctx: &mut Self::Context) -> Self::Result {
+        println!("Websocket Client");
         let id = self.rng.gen::<usize>();
         self.sessions.insert(id, msg.addr);
         println!("Websocket Client {} connected", id);
@@ -84,11 +85,23 @@ impl Handler<CodeUpdate> for CodeServer {
     type Result = ();
 
     fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
-        ctx.text(msg.code);
+//        ctx.text(msg.code);
+    }
+}
+
+impl Handler<CodeUpdate> for CodeSession {
+    type Result = ();
+
+    fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
+//        ctx.text(msg.code);
     }
 }
 
 impl Actor for CodeServer {
+    type Context = Context<Self>;
+}
+
+impl Actor for CodeSession {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
@@ -116,28 +129,28 @@ impl Actor for CodeServer {
 
 
 
-// impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
-//     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-//         log::debug!("WEBSOCKET MESSAGE: {:?}", msg);
-//         match msg {
-//             Ok(ws::Message::Ping(msg)) => {
-//                 self.hb = Instant::now();
-//                 ctx.pong(&msg);
-//             }
-//             Ok(ws::Message::Pong(_)) => {
-//                 self.hb = Instant::now();
-//             }
-//             Ok(ws::Message::Text(text)) => {
-//                 self.addr.do_send(CodeUpdate {
-//                     id: self.id,
-//                     code: text.parse().unwrap(),
-//                 });
-//             }
-//             Ok(ws::Message::Binary(_)) => (),
-//             Ok(ws::Message::Close(_)) => {
-//                 ctx.stop();
-//             }
-//             _ => (),
-//         }
-//     }
-// }
+impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
+    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
+        log::debug!("WEBSOCKET MESSAGE: {:?}", msg);
+        match msg {
+            Ok(ws::Message::Ping(msg)) => {
+                self.hb = Instant::now();
+                ctx.pong(&msg);
+            }
+            Ok(ws::Message::Pong(_)) => {
+                self.hb = Instant::now();
+            }
+            Ok(ws::Message::Text(text)) => {
+                self.addr.do_send(CodeUpdate {
+                    id: self.id,
+                    code: text.parse().unwrap(),
+                });
+            }
+            Ok(ws::Message::Binary(_)) => (),
+            Ok(ws::Message::Close(_)) => {
+                ctx.stop();
+            }
+            _ => (),
+        }
+    }
+}

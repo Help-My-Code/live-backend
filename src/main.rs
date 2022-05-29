@@ -6,8 +6,11 @@ use rand::random;
 
 mod code_session;
 
-async fn websocket_handler(req: HttpRequest, stream: web::Payload,
-    srv: web::Data<Addr<CodeServer>>) -> Result<HttpResponse, Error> {
+async fn websocket_handler(
+    req: HttpRequest,
+    stream: web::Payload,
+    srv: web::Data<Addr<CodeServer>>,
+) -> Result<HttpResponse, Error> {
     println!("{:?}", req);
     let code_session = CodeSession::new(random::<usize>(), srv.get_ref().clone());
     ws::start(code_session, &req, stream)
@@ -22,7 +25,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .route("/ws", web::get().to(websocket_handler))
-            .service(web::resource("/").to(|| async {
+            .service(web::resource("/hello").to(|| async {
                 HttpResponse::Ok().body("Hello world!")
             }))
     })
