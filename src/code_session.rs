@@ -3,26 +3,10 @@ use actix::prelude::*;
 use actix_web_actors::ws;
 use rand::{prelude::ThreadRng, Rng};
 
+use crate::event::{CodeUpdate, Disconnect, Connect};
+
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
-
-#[derive(Message)]
-#[rtype(usize)]
-pub struct Connect {
-    pub addr: Recipient<CodeUpdate>,
-}
-
-#[derive(Message)]
-#[rtype(result = "()")]
-pub struct Disconnect {
-    pub id: usize,
-}
-#[derive(Debug, Message)]
-#[rtype(result = "()")]
-pub struct CodeUpdate {
-    pub id: usize,
-    pub code: String,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CodeSession {
@@ -34,6 +18,15 @@ pub struct CodeSession {
 pub struct CodeServer {
     sessions: HashMap<usize, Recipient<CodeUpdate>>,
     rng: ThreadRng,
+}
+
+impl CodeServer {
+    pub fn new() -> CodeServer {
+        CodeServer {
+            sessions: HashMap::new(),
+            rng: rand::thread_rng(),
+        }
+    }
 }
 
 impl CodeSession {
