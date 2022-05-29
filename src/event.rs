@@ -1,5 +1,9 @@
 use actix::prelude::*;
 
+#[derive(Message, Debug)]
+#[rtype(usize)]
+pub struct Message(pub String);
+
 #[derive(Debug, Message)]
 #[rtype(result = "()")]
 pub struct CodeUpdate {

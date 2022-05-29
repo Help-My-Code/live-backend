@@ -1,9 +1,8 @@
-use std::{time::{Duration, Instant}, collections::HashMap};
+use std::{time::{Duration, Instant}};
 use actix::prelude::*;
 use actix_web_actors::ws;
-use rand::{prelude::ThreadRng, Rng};
 
-use crate::event::{CodeUpdate, Disconnect, Connect};
+use crate::{event::{self, CodeUpdate, Disconnect, Connect}, code_server::CodeServer};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -13,20 +12,6 @@ pub struct CodeSession {
     pub id: usize,
     pub hb: Instant,
     pub addr: Addr<CodeServer>,
-}
-
-pub struct CodeServer {
-    sessions: HashMap<usize, Recipient<CodeUpdate>>,
-    rng: ThreadRng,
-}
-
-impl CodeServer {
-    pub fn new() -> CodeServer {
-        CodeServer {
-            sessions: HashMap::new(),
-            rng: rand::thread_rng(),
-        }
-    }
 }
 
 impl CodeSession {
@@ -53,45 +38,13 @@ impl CodeSession {
     }
 }
 
-impl Handler<Connect> for CodeServer {
-    type Result = usize;
-
-    fn handle(&mut self, msg: Connect, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Websocket Client");
-        let id = self.rng.gen::<usize>();
-        self.sessions.insert(id, msg.addr);
-        println!("Websocket Client {} connected", id);
-        id
-    }
-}
-
-impl Handler<Disconnect> for CodeServer {
+impl Handler<event::Message> for CodeSession {
     type Result = ();
 
-    fn handle(&mut self, msg: Disconnect, _ctx: &mut Self::Context) {
-        println!("Websocket Client {} disconnected", msg.id);
-        self.sessions.remove(&msg.id);
+    fn handle(&mut self, msg: event::Message, ctx: &mut Self::Context) {
+        println!("Websocket Client {} received: {:?}", self.id, msg);
+        ctx.text(msg.0);
     }
-}
-
-impl Handler<CodeUpdate> for CodeServer {
-    type Result = ();
-
-    fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
-//        ctx.text(msg.code);
-    }
-}
-
-impl Handler<CodeUpdate> for CodeSession {
-    type Result = ();
-
-    fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
-//        ctx.text(msg.code);
-    }
-}
-
-impl Actor for CodeServer {
-    type Context = Context<Self>;
 }
 
 impl Actor for CodeSession {
@@ -119,8 +72,6 @@ impl Actor for CodeSession {
         Running::Stop
     }
 }
-
-
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {

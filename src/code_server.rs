@@ -52,6 +52,7 @@ impl Handler<CodeUpdate> for CodeServer {
   type Result = ();
 
   fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
-//        ctx.text(msg.code);
+      // ctx.text(msg.code);
+      // TODO send message to all clients
   }
 }
