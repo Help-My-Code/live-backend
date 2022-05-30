@@ -5,6 +5,7 @@ use actix::prelude::*;
 use actix::Recipient;
 
 use crate::event;
+use crate::config;
 use crate::event::CodeUpdate;
 use crate::event::Connect;
 use crate::event::Disconnect;
@@ -24,7 +25,6 @@ impl CodeServer {
   }
 
   fn send_update_code(&self, message: &str, skip_id: usize) {
-    
     for (id, _addr) in &self.sessions {
       if *id != skip_id {
         if let Some(addr) = self.sessions.get(&id) {
@@ -63,7 +63,18 @@ impl Handler<Disconnect> for CodeServer {
 impl Handler<CodeUpdate> for CodeServer {
   type Result = ();
 
-  fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
-      self.send_update_code( &msg.code, msg.id );
+  fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
+    let code = msg.code.clone();
+    let future = async move {
+      let client = reqwest::Client::new();
+      let resp = client.post(config::COMPILER_URL)
+      .body(code)
+      .send()
+      .await;
+      println!("compiler response {:?}", resp);
+    };
+    let future = actix::fut::wrap_future::<_, Self>(future);
+    ctx.spawn(future);
+    self.send_update_code( &msg.code, msg.id );
   }
 }

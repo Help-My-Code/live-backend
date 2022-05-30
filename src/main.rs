@@ -9,6 +9,7 @@ use rand::random;
 mod event;
 mod code_session;
 mod code_server;
+mod config;
 
 async fn websocket_handler(
     req: HttpRequest,
