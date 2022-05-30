@@ -11,11 +11,11 @@ pub struct CodeUpdate {
     pub code: String,
 }
 
-// impl CodeUpdate {
-//     pub fn new(id: usize, code: String) -> Self {
-//         CodeUpdate { id, code }
-//     }
-// }
+impl CodeUpdate {
+    pub fn new(id: usize, code: String) -> Self {
+        CodeUpdate { id, code }
+    }
+}
 
 #[derive(Message)]
 #[rtype(usize)]
