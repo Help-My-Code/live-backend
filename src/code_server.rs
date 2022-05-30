@@ -74,7 +74,7 @@ impl Handler<CodeUpdate> for CodeServer {
       println!("compiler response {:?}", resp);
     };
     let future = actix::fut::wrap_future::<_, Self>(future);
-    ctx.spawn(future);
+    ctx.wait(future);
     self.send_update_code( &msg.code, msg.id );
   }
 }
