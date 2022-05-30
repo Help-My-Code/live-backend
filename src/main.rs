@@ -39,7 +39,7 @@ async fn main() -> std::io::Result<()> {
             }))
     })
     .workers(2)
-    .bind(("127.0.0.1", 8080))?
+    .bind((config::EXPOSED_IP, config::PORT))?
     .run()
     .await
 }
