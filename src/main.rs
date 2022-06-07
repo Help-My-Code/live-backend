@@ -10,6 +10,7 @@ mod event;
 mod code_session;
 mod code_server;
 mod config;
+mod program_dto;
 
 async fn websocket_handler(
     req: HttpRequest,

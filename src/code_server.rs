@@ -9,6 +9,8 @@ use crate::config;
 use crate::event::CodeUpdate;
 use crate::event::Connect;
 use crate::event::Disconnect;
+use crate::program_dto::Language;
+use crate::program_dto::ProgramRequest;
 
 
 pub struct CodeServer {
@@ -65,10 +67,14 @@ impl Handler<CodeUpdate> for CodeServer {
 
   fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
     let code = msg.code.clone();
+    let program_dto = ProgramRequest {
+      stdin: code,
+      language: Language::DART,
+    };
     let future = async move {
       let client = reqwest::Client::new();
       let resp = client.post(config::COMPILER_URL)
-      .body(code)
+      .body(serde_json::to_string(&program_dto).unwrap())
       .send()
       .await;
       println!("compiler response {:?}", resp);

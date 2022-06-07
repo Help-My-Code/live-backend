@@ -27,7 +27,6 @@ impl CodeSession {
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
                 println!("Websocket Client heartbeat failed, disconnecting!");
 
-                // notify chat server
                 act.addr.do_send(Disconnect { id: act.id.clone() });
                 ctx.stop();
                 return;
