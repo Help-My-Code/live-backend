@@ -73,11 +73,11 @@ impl Handler<CodeUpdate> for CodeServer {
     };
     let future = async move {
       let client = reqwest::Client::new();
-      let resp = client.post(config::COMPILER_URL)
-      .body(serde_json::to_string(&program_dto).unwrap())
+      let res = client.post(config::COMPILER_URL)
+      .json(&serde_json::to_value(&program_dto).unwrap())
       .send()
       .await;
-      println!("compiler response {:?}", resp);
+      println!("compiler response {:?}", res.unwrap());
     };
     let future = actix::fut::wrap_future::<_, Self>(future);
     ctx.wait(future);
