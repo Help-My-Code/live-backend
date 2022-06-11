@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize)]
 pub enum Language {
@@ -11,4 +11,9 @@ pub enum Language {
 pub struct ProgramRequest {
   pub stdin: String,
   pub language: Language,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ProgramResponse {
+  pub stdout: String,
 }

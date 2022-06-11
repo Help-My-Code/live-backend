@@ -28,3 +28,9 @@ pub struct Connect {
 pub struct Disconnect {
     pub id: usize,
 }
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct ExecutionResponse {
+    pub stdout: String,
+}

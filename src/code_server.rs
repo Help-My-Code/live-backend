@@ -5,12 +5,9 @@ use actix::prelude::*;
 use actix::Recipient;
 
 use crate::event;
-use crate::config;
 use crate::event::CodeUpdate;
 use crate::event::Connect;
 use crate::event::Disconnect;
-use crate::program_dto::Language;
-use crate::program_dto::ProgramRequest;
 
 
 pub struct CodeServer {
@@ -67,20 +64,8 @@ impl Handler<CodeUpdate> for CodeServer {
 
   fn handle(&mut self, msg: CodeUpdate, ctx: &mut Self::Context) {
     let code = msg.code.clone();
-    let program_dto = ProgramRequest {
-      stdin: code,
-      language: Language::DART,
-    };
-    let future = async move {
-      let client = reqwest::Client::new();
-      let res = client.post(config::COMPILER_URL)
-      .json(&serde_json::to_value(&program_dto).unwrap())
-      .send()
-      .await;
-      println!("compiler response {:?}", res.unwrap());
-    };
-    let future = actix::fut::wrap_future::<_, Self>(future);
-    ctx.wait(future);
+
     self.send_update_code( &msg.code, msg.id );
   }
+
 }
