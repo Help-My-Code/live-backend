@@ -3,7 +3,7 @@ use actix::prelude::*;
 use actix_web_actors::ws;
 use actix_broker::BrokerIssue;
 
-use crate::{event::{self, CodeUpdate, Disconnect, Connect, LeaveRoom, JoinRoom}, code_server::CodeServer};
+use crate::{event::{self, CodeUpdate, Disconnect, Connect, LeaveRoom, JoinRoom, ListRooms}, code_server::CodeServer};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -40,6 +40,23 @@ impl CodeSession {
             ctx.ping(b"");
         });
     }
+
+    pub fn list_rooms(&mut self, ctx: &mut ws::WebsocketContext<Self>) {
+        CodeServer::from_registry()
+            .send(ListRooms)
+            .into_actor(self)
+            .then(|res, _, ctx| {
+                if let Ok(rooms) = res {
+                    for room in rooms {
+                        ctx.text(room);
+                    }
+                }
+
+                fut::ready(())
+            })
+            .wait(ctx);
+    }
+
     pub fn join_room(&mut self, room_name: &str, ctx: &mut ws::WebsocketContext<Self>) {
         let room_name = room_name.to_owned();
 
