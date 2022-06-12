@@ -10,6 +10,8 @@ use crate::event::CodeUpdate;
 use crate::event::Connect;
 use crate::event::Disconnect;
 use crate::event::JoinRoom;
+use crate::event::LeaveRoom;
+use crate::event::ListRooms;
 use crate::program_dto::{Language, ProgramRequest, ProgramResponse};
 use event::ExecutionResponse;
 
@@ -91,8 +93,7 @@ impl CodeServer {
         Err(_) => todo!(),
       };
     });
-
-}
+  }
 }
 
 impl Actor for CodeServer {
@@ -102,7 +103,7 @@ impl Actor for CodeServer {
 impl Handler<Connect> for CodeServer {
   type Result = usize;
 
-  fn handle(&mut self, msg: Connect, _ctx: &mut Self::Context) -> Self::Result {
+  fn handle(&mut self, _msg: Connect, _ctx: &mut Self::Context) -> Self::Result {
       println!("Websocket Client");
       let id = self.rng.gen::<usize>();
       println!("Websocket Client {} connected", id);
@@ -133,9 +134,27 @@ impl Handler<CodeUpdate> for CodeServer {
 impl Handler<JoinRoom> for CodeServer {
   type Result = usize;
 
-  fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> usize {
+  fn handle(&mut self, _msg: JoinRoom, _ctx: &mut Self::Context) -> usize {
     println!("Join room");
     return 0; // TODO do other things
+  }
+}
+
+impl Handler<LeaveRoom> for CodeServer {
+  type Result = ();
+
+  fn handle(&mut self, msg: LeaveRoom, _ctx: &mut Self::Context) {
+      if let Some(room) = self.rooms.get_mut(&msg.0) {
+          room.remove(&msg.1);
+      }
+  }
+}
+
+impl Handler<ListRooms> for CodeServer {
+  type Result = MessageResult<ListRooms>;
+
+  fn handle(&mut self, _: ListRooms, _ctx: &mut Self::Context) -> Self::Result {
+      MessageResult(self.rooms.keys().cloned().collect())
   }
 }
 
