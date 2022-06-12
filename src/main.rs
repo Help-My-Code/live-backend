@@ -4,8 +4,6 @@ use actix_web_actors::ws;
 use actix::Actor;
 use code_server::CodeServer;
 use code_session::CodeSession;
-use event::ExecutionResponse;
-use program_dto::{ProgramRequest, Language, ProgramResponse};
 use rand::random;
 
 mod event;
@@ -45,26 +43,4 @@ async fn main() -> std::io::Result<()> {
     .bind((config::EXPOSED_IP, config::PORT))?
     .run()
     .await
-}
-
-async fn execute_code(code: String) {
-    let program_dto = ProgramRequest {
-      stdin: code,
-      language: Language::DART,
-    };
-    let client = reqwest::Client::new();
-    let res = client.post(config::COMPILER_URL)
-    .json(&serde_json::to_value(&program_dto).unwrap())
-    .send()
-    .await
-    .unwrap()
-    .json::<ProgramResponse>()
-    .await;
-    match res {
-      Ok(program_response) => {
-        let execution = ExecutionResponse { stdout: program_response.stdout };
-        // todo send a new event
-      },
-      Err(_) => todo!(),
-    };
 }

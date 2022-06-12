@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use serde::Serialize;
 
 #[derive(Message, Debug)]
 #[rtype(usize)]
@@ -29,7 +30,7 @@ pub struct Disconnect {
     pub id: usize,
 }
 
-#[derive(Message)]
+#[derive(Message, Serialize, Debug)]
 #[rtype(result = "()")]
 pub struct ExecutionResponse {
     pub stdout: String,
