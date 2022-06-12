@@ -1,8 +1,9 @@
 use std::{time::{Duration, Instant}};
 use actix::prelude::*;
 use actix_web_actors::ws;
+use actix_broker::BrokerIssue;
 
-use crate::{event::{self, CodeUpdate, Disconnect, Connect}, code_server::CodeServer};
+use crate::{event::{self, CodeUpdate, Disconnect, Connect, LeaveRoom, JoinRoom}, code_server::CodeServer};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -12,6 +13,8 @@ pub struct CodeSession {
     pub id: usize,
     pub hb: Instant,
     pub addr: Addr<CodeServer>,
+    pub room: String,
+    pub name: Option<String>,
 }
 
 impl CodeSession {
@@ -20,6 +23,8 @@ impl CodeSession {
             id,
             hb: Instant::now(),
             addr,
+            room: "".to_string(),
+            name: None,
         }
     }
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>) {
@@ -34,6 +39,33 @@ impl CodeSession {
 
             ctx.ping(b"");
         });
+    }
+    pub fn join_room(&mut self, room_name: &str, ctx: &mut ws::WebsocketContext<Self>) {
+        let room_name = room_name.to_owned();
+
+        // leave current room
+        let leave_msg = LeaveRoom(self.room.clone(), self.id);
+
+        self.issue_system_sync(leave_msg, ctx);
+
+        let join_msg = JoinRoom(
+            room_name.to_owned(),
+            self.name.clone(),
+            ctx.address().recipient(),
+        );
+
+        CodeServer::from_registry()
+            .send(join_msg)
+            .into_actor(self)
+            .then(|id, act, _ctx| {
+                if let Ok(id) = id {
+                    act.id = id;
+                    act.room = room_name;
+                }
+
+                fut::ready(())
+            })
+            .wait(ctx);
     }
 }
 
@@ -88,7 +120,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
             }
             Ok(ws::Message::Text(text)) => {
                 println!("Websocket Server received {:?}", text);
-                self.addr.do_send(CodeUpdate::new(self.id, text.parse().unwrap()));
+                self.addr.do_send(CodeUpdate::new(self.id, text.parse().unwrap(), "test".to_string()));
             }
             Ok(ws::Message::Binary(_)) => (),
             Ok(ws::Message::Close(_)) => {

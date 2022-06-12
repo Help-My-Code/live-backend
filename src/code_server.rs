@@ -9,38 +9,70 @@ use crate::event;
 use crate::event::CodeUpdate;
 use crate::event::Connect;
 use crate::event::Disconnect;
+use crate::event::JoinRoom;
 use crate::program_dto::{Language, ProgramRequest, ProgramResponse};
 use event::ExecutionResponse;
 
+
+type Client = Recipient<event::Message>;
+type Room = HashMap<usize, Client>;
+
+
+#[derive(Default)]
 pub struct CodeServer {
-  sessions: HashMap<usize, Recipient<event::Message>>,
+  rooms: HashMap<String, Room>,
   rng: ThreadRng,
 }
 
 impl CodeServer {
   pub fn new() -> CodeServer {
       CodeServer {
-          sessions: HashMap::new(),
+          rooms: HashMap::new(),
           rng: rand::thread_rng(),
       }
   }
 
-  fn send_update_code(&self, message: &str, skip_id: usize) {
-    for (id, _addr) in &self.sessions {
-      if *id != skip_id {
-        if let Some(addr) = self.sessions.get(&id) {
-          let _ = addr.do_send(event::Message(message.to_string()));
-        }
+  fn add_user_to_room(&mut self, room_name: &str, id: Option<usize>, client: Client) -> usize {
+    let mut id = id.unwrap_or_else(rand::random::<usize>);
+
+    if let Some(room) = self.rooms.get_mut(room_name) {
+      while room.contains_key(&id) {
+        id = rand::random::<usize>();
+        room.insert(id, client);
+        return id;
+      }
+    }
+    let mut room: Room = HashMap::new();
+    room.insert(id, client);
+    self.rooms.insert(room_name.to_owned(), room);
+    id
+  }
+
+  fn take_room(&mut self, room_name: &str) -> Option<Room> {
+    let room = self.rooms.get_mut(room_name)?;
+    let room = std::mem::take(room);
+    Some(room)
+  }
+
+  fn send_update_code(&mut self, message: &str, skip_id: usize, room_name: &str) {
+    let mut room = self.take_room(room_name).unwrap();
+
+    for (id, client) in room.drain() {
+      if id != skip_id {
+        client.do_send(event::Message(message.to_owned()));
       }
     }
   }
-  fn execute_code(&self, code: String) {
+
+  fn execute_code(&mut self, code: String, room_name: &str) {
     let program_dto = ProgramRequest {
       stdin: code,
       language: Language::DART,
     };
     let client = reqwest::Client::new();
-    let session_copy = self.sessions.clone();
+    let room = self.take_room(room_name).unwrap();
+    let room_copy = room.clone();
+
     actix_rt::spawn(async move {
       let res = client.post(config::COMPILER_URL)
       .json(&serde_json::to_value(&program_dto).unwrap())
@@ -52,7 +84,7 @@ impl CodeServer {
       match res {
         Ok(program_response) => {
           let execution = ExecutionResponse { stdout: program_response.stdout };
-          for (_id, addr) in session_copy {
+          for (_id, addr) in room_copy {
             let _ = addr.do_send(event::Message(serde_json::to_string(&execution).unwrap()));
           }
         },
@@ -73,7 +105,6 @@ impl Handler<Connect> for CodeServer {
   fn handle(&mut self, msg: Connect, _ctx: &mut Self::Context) -> Self::Result {
       println!("Websocket Client");
       let id = self.rng.gen::<usize>();
-      self.sessions.insert(id, msg.addr);
       println!("Websocket Client {} connected", id);
       id
   }
@@ -84,7 +115,6 @@ impl Handler<Disconnect> for CodeServer {
 
   fn handle(&mut self, msg: Disconnect, _ctx: &mut Self::Context) {
       println!("Websocket Client {} disconnected", msg.id);
-      self.sessions.remove(&msg.id);
   }
 }
 
@@ -94,8 +124,20 @@ impl Handler<CodeUpdate> for CodeServer {
   fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
     let code = msg.code.clone();
 
-    self.send_update_code( &msg.code, msg.id );
-    self.execute_code(code);
+    self.send_update_code( &msg.code, msg.id, &msg.room_name );
+    self.execute_code(code, &msg.room_name);
   }
 
 }
+
+impl Handler<JoinRoom> for CodeServer {
+  type Result = usize;
+
+  fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> usize {
+    println!("Join room");
+    return 0; // TODO do other things
+  }
+}
+
+impl SystemService for CodeServer {}
+impl Supervised for CodeServer {}
