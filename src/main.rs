@@ -20,7 +20,6 @@ async fn websocket_handler(
 ) -> Result<HttpResponse, Error> {
     println!("{:?}", req);
     let room_name = path.into_inner();
-    println!("{:?}", room_name);
     let code_session = CodeSession::new(random::<usize>(), srv.get_ref().clone(), room_name, None);
     ws::start(code_session, &req, stream)
 }

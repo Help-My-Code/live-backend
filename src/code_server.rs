@@ -41,8 +41,10 @@ impl CodeServer {
 
   fn send_update_code(&mut self, message: &str, skip_id: usize, room_name: &str) {
     let mut room = self.take_room(room_name).unwrap();
+    println!("room: {:?}", room);
 
     for (id, client) in room.drain() {
+      println!("Sending update code to client {} {:?}", id, client);
       if id != skip_id {
         client.do_send(event::Message(message.to_owned()));
       }
@@ -87,7 +89,6 @@ impl Handler<Connect> for CodeServer {
   type Result = usize;
 
   fn handle(&mut self, _msg: Connect, _ctx: &mut Self::Context) -> Self::Result {
-      println!("Websocket Client");
       let id = self.rng.gen::<usize>();
       println!("Websocket Client {} connected", id);
       id
