@@ -9,9 +9,6 @@ use crate::event;
 use crate::event::CodeUpdate;
 use crate::event::Connect;
 use crate::event::Disconnect;
-use crate::event::JoinRoom;
-use crate::event::LeaveRoom;
-use crate::event::ListRooms;
 use crate::program_dto::{Language, ProgramRequest, ProgramResponse};
 use event::ExecutionResponse;
 
@@ -32,22 +29,6 @@ impl CodeServer {
           rooms: HashMap::new(),
           rng: rand::thread_rng(),
       }
-  }
-
-  fn add_user_to_room(&mut self, room_name: &str, id: Option<usize>, client: Client) -> usize {
-    let mut id = id.unwrap_or_else(rand::random::<usize>);
-
-    if let Some(room) = self.rooms.get_mut(room_name) {
-      while room.contains_key(&id) {
-        id = rand::random::<usize>();
-        room.insert(id, client);
-        return id;
-      }
-    }
-    let mut room: Room = HashMap::new();
-    room.insert(id, client);
-    self.rooms.insert(room_name.to_owned(), room);
-    id
   }
 
   fn take_room(&mut self, room_name: &str) -> Option<Room> {
@@ -127,35 +108,9 @@ impl Handler<CodeUpdate> for CodeServer {
 
     self.send_update_code( &msg.code, msg.id, &msg.room_name );
     self.execute_code(code, &msg.room_name);
+
   }
 
-}
-
-impl Handler<JoinRoom> for CodeServer {
-  type Result = usize;
-
-  fn handle(&mut self, _msg: JoinRoom, _ctx: &mut Self::Context) -> usize {
-    println!("Join room");
-    return 0; // TODO do other things
-  }
-}
-
-impl Handler<LeaveRoom> for CodeServer {
-  type Result = ();
-
-  fn handle(&mut self, msg: LeaveRoom, _ctx: &mut Self::Context) {
-      if let Some(room) = self.rooms.get_mut(&msg.0) {
-          room.remove(&msg.1);
-      }
-  }
-}
-
-impl Handler<ListRooms> for CodeServer {
-  type Result = MessageResult<ListRooms>;
-
-  fn handle(&mut self, _: ListRooms, _ctx: &mut Self::Context) -> Self::Result {
-      MessageResult(self.rooms.keys().cloned().collect())
-  }
 }
 
 impl SystemService for CodeServer {}

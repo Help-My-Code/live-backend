@@ -16,9 +16,12 @@ async fn websocket_handler(
     req: HttpRequest,
     stream: web::Payload,
     srv: web::Data<Addr<CodeServer>>,
+    path: web::Path<String>
 ) -> Result<HttpResponse, Error> {
     println!("{:?}", req);
-    let code_session = CodeSession::new(random::<usize>(), srv.get_ref().clone());
+    let room_name = path.into_inner();
+    println!("{:?}", room_name);
+    let code_session = CodeSession::new(random::<usize>(), srv.get_ref().clone(), room_name, None);
     ws::start(code_session, &req, stream)
 }
 
@@ -34,7 +37,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(code_server.clone()))
             .wrap(middleware::Logger::default())
-            .route("/ws", web::get().to(websocket_handler))
+            .route("/ws/{room_id}", web::get().to(websocket_handler))
             .service(web::resource("/hello").to(|| async {
                 HttpResponse::Ok().body("Hello world!")
             }))

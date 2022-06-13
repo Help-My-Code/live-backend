@@ -23,6 +23,7 @@ impl CodeUpdate {
 #[rtype(usize)]
 pub struct Connect {
     pub addr: Recipient<Message>,
+    pub room_name: String,
 }
 
 #[derive(Message)]
@@ -30,10 +31,6 @@ pub struct Connect {
 pub struct Disconnect {
     pub id: usize,
 }
-
-#[derive(Clone, Message)]
-#[rtype(result = "usize")]
-pub struct JoinRoom(pub String, pub Option<String>, pub Recipient<Message>);
 
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
