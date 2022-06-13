@@ -7,10 +7,12 @@ use actix::Recipient;
 use crate::config;
 use crate::event;
 use crate::event::CodeUpdate;
+use crate::event::CompileCode;
 use crate::event::Connect;
 use crate::event::Disconnect;
 use crate::program_dto::{Language, ProgramRequest, ProgramResponse};
 use event::ExecutionResponse;
+use common_macros::hash_map;
 
 
 type Client = Recipient<event::Message>;
@@ -26,7 +28,7 @@ pub struct CodeServer {
 impl CodeServer {
   pub fn new() -> CodeServer {
       CodeServer {
-          rooms: HashMap::new(),
+          rooms: hash_map! { "room_id".to_string() => HashMap::new() },
           rng: rand::thread_rng(),
       }
   }
@@ -104,11 +106,18 @@ impl Handler<CodeUpdate> for CodeServer {
   type Result = ();
 
   fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
-    let code = msg.code.clone();
-
     self.send_update_code( &msg.code, msg.id, &msg.room_name );
-    self.execute_code(code, &msg.room_name);
+  }
 
+}
+
+impl Handler<CompileCode> for CodeServer {
+  type Result = ();
+
+  fn handle(&mut self, msg: CompileCode, _ctx: &mut Self::Context) {
+    let code = msg.code.clone();
+    println!("Compiling code");
+    self.execute_code(code, &msg.room_name);
   }
 
 }

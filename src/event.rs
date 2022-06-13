@@ -19,6 +19,20 @@ impl CodeUpdate {
     }
 }
 
+#[derive(Debug, Message)]
+#[rtype(result = "()")]
+pub struct CompileCode {
+    pub id: usize,
+    pub code: String,
+    pub room_name: String,
+}
+
+impl CompileCode {
+    pub fn new(id: usize, code: String, room_name: String) -> Self {
+        CompileCode { id, code, room_name }
+    }
+}
+
 #[derive(Message)]
 #[rtype(usize)]
 pub struct Connect {
@@ -31,14 +45,6 @@ pub struct Connect {
 pub struct Disconnect {
     pub id: usize,
 }
-
-#[derive(Clone, Message)]
-#[rtype(result = "()")]
-pub struct LeaveRoom(pub String, pub usize);
-
-#[derive(Clone, Message)]
-#[rtype(result = "Vec<String>")]
-pub struct ListRooms;
 
 #[derive(Message, Serialize, Debug)]
 #[rtype(result = "()")]

@@ -2,7 +2,7 @@ use std::{time::{Duration, Instant}};
 use actix::prelude::*;
 use actix_web_actors::ws;
 
-use crate::{event::{self, Disconnect, Connect}, code_server::CodeServer};
+use crate::{event::{self, CodeUpdate, Disconnect, Connect, CompileCode}, code_server::CodeServer};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -100,7 +100,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
                     let mut command = msg.splitn(2, ' ');
 
                     match command.next() {
-
                         Some("/name") => {
                             if let Some(name) = command.next() {
                                 self.name = Some(name.to_owned());
@@ -109,7 +108,24 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
                                 ctx.text("!!! name is required");
                             }
                         }
-
+                        Some("/compile") => {
+                            let code = command.next();
+                            if code.is_none() {
+                                ctx.text("!!! code is required");
+                                return;
+                            }
+                            let code = code.unwrap();
+                            self.addr.do_send(CompileCode::new(self.id, code.to_owned(), self.room.clone()));
+                        }
+                        Some("/code_update") => {
+                            let code = command.next();
+                            if code.is_none() {
+                                ctx.text("!!! code is required");
+                                return;
+                            }
+                            let code = code.unwrap();
+                            self.addr.do_send(CodeUpdate::new(self.id, code.to_owned(),self.room.clone()));
+                        }
                         _ => ctx.text(format!("!!! unknown command: {msg:?}")),
                     }
 
