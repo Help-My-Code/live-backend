@@ -59,6 +59,7 @@ impl Actor for CodeSession {
         self.hb(ctx);
 
         let addr = ctx.address();
+        // todo add room to codeServer and user to room
         self.addr
             .send(Connect {
                 addr: addr.recipient(),
