@@ -25,6 +25,7 @@ pub struct CodeServer {
 
 impl CodeServer {
   pub fn new() -> CodeServer {
+      println!("new CodeServer");
       CodeServer {
           rooms: HashMap::new(),
           rng: rand::thread_rng(),
@@ -48,14 +49,15 @@ impl CodeServer {
   }
 
   fn send_update_code(&mut self, message: &str, skip_id: usize, room_name: &str) {
-    let mut room = self.take_room(room_name).unwrap();
-    println!("room {:?}", room);
-    for (id, client) in room.drain() {
+    let room = self.take_room(room_name).unwrap();
+    self.rooms.insert(room_name.to_owned(), room.clone());
+    for (id, client) in room {
       println!("Sending update code to client {} {:?}", id, client);
       if id != skip_id {
         client.do_send(event::Message(message.to_owned()));
       }
     }
+    ;
   }
 
   fn execute_code(&mut self, code: String, room_name: &str) {
@@ -66,6 +68,7 @@ impl CodeServer {
     let client = reqwest::Client::new();
     let room = self.take_room(room_name).unwrap();
     let room_copy = room.clone();
+    self.rooms.insert(room_name.to_owned(), room);
 
     actix_rt::spawn(async move {
       let res = client.post(config::COMPILER_URL)
