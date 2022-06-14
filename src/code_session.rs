@@ -2,7 +2,7 @@ use std::{time::{Duration, Instant}};
 use actix::prelude::*;
 use actix_web_actors::ws;
 
-use crate::{event::{self, CodeUpdate, Disconnect, Connect}, code_server::CodeServer};
+use crate::{event::{self, CodeUpdate, Disconnect, Connect, CompileCode}, code_server::CodeServer};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -12,14 +12,18 @@ pub struct CodeSession {
     pub id: usize,
     pub hb: Instant,
     pub addr: Addr<CodeServer>,
+    pub room: String,
+    pub name: Option<String>,
 }
 
 impl CodeSession {
-    pub fn new(id: usize, addr: Addr<CodeServer>) -> Self {
+    pub fn new(id: usize, addr: Addr<CodeServer>, room: String, name: Option<String>) -> Self {
         CodeSession {
             id,
             hb: Instant::now(),
             addr,
+            room: room.clone(),
+            name: name.clone(),
         }
     }
     fn hb(&self, ctx: &mut ws::WebsocketContext<Self>) {
@@ -27,7 +31,6 @@ impl CodeSession {
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
                 println!("Websocket Client heartbeat failed, disconnecting!");
 
-                // notify chat server
                 act.addr.do_send(Disconnect { id: act.id.clone() });
                 ctx.stop();
                 return;
@@ -36,6 +39,7 @@ impl CodeSession {
             ctx.ping(b"");
         });
     }
+
 }
 
 impl Handler<event::Message> for CodeSession {
@@ -58,6 +62,7 @@ impl Actor for CodeSession {
         self.addr
             .send(Connect {
                 addr: addr.recipient(),
+                room_name: self.room.clone(),
             })
             .into_actor(self)
             .then(|res, act, ctx| {
@@ -89,7 +94,43 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
             }
             Ok(ws::Message::Text(text)) => {
                 println!("Websocket Server received {:?}", text);
-                self.addr.do_send(CodeUpdate::new(self.id, text.parse().unwrap()));
+                let msg = text.trim();
+
+                if msg.starts_with('/') {
+                    let mut command = msg.splitn(2, ' ');
+
+                    match command.next() {
+                        Some("/name") => {
+                            if let Some(name) = command.next() {
+                                self.name = Some(name.to_owned());
+                                ctx.text(format!("name changed to: {name}"));
+                            } else {
+                                ctx.text("!!! name is required");
+                            }
+                        }
+                        Some("/compile") => {
+                            let code = command.next();
+                            if code.is_none() {
+                                ctx.text("!!! code is required");
+                                return;
+                            }
+                            let code = code.unwrap();
+                            self.addr.do_send(CompileCode::new(self.id, code.to_owned(), self.room.clone()));
+                        }
+                        Some("/code_update") => {
+                            let code = command.next();
+                            if code.is_none() {
+                                ctx.text("!!! code is required");
+                                return;
+                            }
+                            let code = code.unwrap();
+                            self.addr.do_send(CodeUpdate::new(self.id, code.to_owned(),self.room.clone()));
+                        }
+                        _ => ctx.text(format!("!!! unknown command: {msg:?}")),
+                    }
+
+                    return;
+                }
             }
             Ok(ws::Message::Binary(_)) => (),
             Ok(ws::Message::Close(_)) => {

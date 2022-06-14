@@ -27,6 +27,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-broker"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e089b5c4d0cf02d72a9eca0b6c80aebff1ccd3d1e99c83d1f7b9baeff39dc5e9"
+dependencies = [
+ "actix",
+ "ahash",
+ "log",
+]
+
+[[package]]
 name = "actix-codec"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -398,6 +409,12 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "common_macros"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3f6d59c71e7dc3af60f0af9db32364d96a16e9310f3f5db2b55ed642162dd35"
 
 [[package]]
 name = "convert_case"
@@ -843,10 +860,12 @@ name = "live-backend"
 version = "0.1.0"
 dependencies = [
  "actix",
+ "actix-broker",
  "actix-files",
  "actix-rt",
  "actix-web",
  "actix-web-actors",
+ "common_macros",
  "env_logger",
  "log",
  "rand",
@@ -1293,6 +1312,20 @@ name = "serde"
 version = "1.0.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61ea8d54c77f8315140a05f4c7237403bf38b72704d031543aa1d16abbf517d1"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.137"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f26faba0c3959972377d3b2d306ee9f71faee9714294e41bb777f83f88578be"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "serde_json"
