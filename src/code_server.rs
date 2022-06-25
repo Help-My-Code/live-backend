@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use log::info;
 use rand::Rng;
 use rand::prelude::ThreadRng;
 use actix::prelude::*;
@@ -25,7 +26,6 @@ pub struct CodeServer {
 
 impl CodeServer {
   pub fn new() -> CodeServer {
-      println!("new CodeServer");
       CodeServer {
           rooms: HashMap::new(),
           rng: rand::thread_rng(),
@@ -104,7 +104,7 @@ impl Handler<Connect> for CodeServer {
       let mut room = self.take_room(event.room_name.as_str()).unwrap();
       room.insert(id, event.addr);
       self.rooms.insert(event.room_name.clone(), room);
-      println!("Websocket Client {} connected to room {}", id, event.room_name);
+      info!("Websocket Client {} connected to room {}", id, event.room_name);
       id
   }
 }
@@ -113,7 +113,7 @@ impl Handler<Disconnect> for CodeServer {
   type Result = ();
 
   fn handle(&mut self, msg: Disconnect, _ctx: &mut Self::Context) {
-      println!("Websocket Client {} disconnected", msg.id);
+      info!("Websocket Client {} disconnected", msg.id);
   }
 }
 
@@ -131,7 +131,7 @@ impl Handler<CompileCode> for CodeServer {
 
   fn handle(&mut self, msg: CompileCode, _ctx: &mut Self::Context) {
     let code = msg.code.clone();
-    println!("Compiling code");
+    info!("Compiling code");
     self.execute_code(code, &msg.room_name);
   }
 
