@@ -2,7 +2,7 @@ use std::{time::{Duration, Instant}};
 use actix::prelude::*;
 use actix_web_actors::ws;
 
-use crate::{event::{self, CodeUpdate, Disconnect, Connect, CompileCode}, code_server::CodeServer};
+use crate::{event::{self, CodeUpdate, Disconnect, Connect, CompileCode}, code_server::CodeServer, delta::Delta};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -117,13 +117,19 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
                             let code = code.unwrap();
                             self.addr.do_send(CompileCode::new(self.id, code.to_owned(), self.room.clone()));
                         }
-                        Some("/code_update") => {
+                        Some("/code_updates") => {
                             let code = command.next();
                             if code.is_none() {
                                 ctx.text("!!! code is required");
                                 return;
                             }
                             let code = code.unwrap();
+                            let change: Result<Vec<Delta>, serde_json::Error> = serde_json::from_str(code);
+                            let change = match change {
+                                Ok(change) => change,
+                                Err(err) => panic!("failed to parse changes: {}", err),
+                            };
+                            println!("change: {:?}", change);
                             self.addr.do_send(CodeUpdate::new(self.id, code.to_owned(),self.room.clone()));
                         }
                         _ => ctx.text(format!("!!! unknown command: {msg:?}")),

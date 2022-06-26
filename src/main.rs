@@ -4,9 +4,11 @@ use actix_web_actors::ws;
 use actix::Actor;
 use code_server::CodeServer;
 use code_session::CodeSession;
+use log::{debug, info};
 use rand::random;
 
 mod event;
+mod delta;
 mod code_session;
 mod code_server;
 mod config;
@@ -18,7 +20,7 @@ async fn websocket_handler(
     srv: web::Data<Addr<CodeServer>>,
     path: web::Path<String>
 ) -> Result<HttpResponse, Error> {
-    println!("{:?}", req);
+    debug!("{:?}", req);
     let room_name = path.into_inner();
     let code_session = CodeSession::new(random::<usize>(), srv.get_ref().clone(), room_name, None);
     ws::start(code_session, &req, stream)
@@ -27,11 +29,12 @@ async fn websocket_handler(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
+    std::env::set_var("RUST_LOG", "info");
 
     let code_server = CodeServer::new().start();
 
+    info!("start server on : {}:{}", config::EXPOSED_IP, config::PORT);
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(code_server.clone()))
