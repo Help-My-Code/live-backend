@@ -12,7 +12,7 @@ use crate::models::event::CompileCode;
 use crate::models::event::Connect;
 use crate::models::event::Disconnect;
 use crate::models::event::ExecutionResponse;
-use crate::program_dto::{Language, ProgramRequest, ProgramResponse};
+use crate::models::program_dto::{Language, ProgramRequest, ProgramResponse};
 
 type Client = Recipient<event::Message>;
 type CodeRoom = HashMap<usize, Client>;
