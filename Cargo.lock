@@ -1749,6 +1749,7 @@ dependencies = [
  "thiserror",
  "tokio-stream",
  "url",
+ "uuid",
  "whoami",
 ]
 

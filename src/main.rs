@@ -12,6 +12,7 @@ use log::{debug, info};
 use rand::random;
 use sqlx::postgres::PgPoolOptions;
 use dotenv::dotenv;
+use uuid::{uuid, Uuid};
 
 mod event;
 mod delta;
@@ -66,14 +67,13 @@ async fn connect_db() -> Result<(), sqlx::Error> {
     .max_connections(5)
     .connect(dotenv!("DATABASE_URL")).await;
 
-    // Make a simple query to return the given parameter (use a question mark `?` instead of `$1` for MySQL)
-    let row: (String,) = sqlx::query_as("SELECT * FROM room
+    let row: (Uuid, Uuid, Uuid, String, String) = sqlx::query_as("SELECT room.id, room.content_id, room.program_id, program.stdin, program.stdout FROM room
     LEFT JOIN program on program_id = program.id
     WHERE room.id = $1")
-    .bind("298f6b5c-0975-41b4-ab29-2cedc6cb0be2")
+    .bind(uuid!("298f6b5c-0975-41b4-ab29-2cedc6cb0be2"))
     .fetch_one(&pool.unwrap()).await.unwrap();
 
     println!("{:?}", row);
-    assert_eq!(row.0, "150");
+    assert_eq!(row.0, uuid!("298f6b5c-0975-41b4-ab29-2cedc6cb0be2"));
     Ok(())
 }
