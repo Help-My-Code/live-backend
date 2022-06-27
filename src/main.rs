@@ -19,6 +19,7 @@ mod code_session;
 mod code_server;
 mod config;
 mod program_dto;
+mod models;
 
 async fn websocket_handler(
     req: HttpRequest,
@@ -66,11 +67,13 @@ async fn connect_db() -> Result<(), sqlx::Error> {
     .connect(dotenv!("DATABASE_URL")).await;
 
     // Make a simple query to return the given parameter (use a question mark `?` instead of `$1` for MySQL)
-    let row: (i64,) = sqlx::query_as("SELECT $1")
-    .bind(150_i64)
+    let row: (String,) = sqlx::query_as("SELECT * FROM room
+    LEFT JOIN program on program_id = program.id
+    WHERE room.id = $1")
+    .bind("298f6b5c-0975-41b4-ab29-2cedc6cb0be2")
     .fetch_one(&pool.unwrap()).await.unwrap();
 
     println!("{:?}", row);
-    assert_eq!(row.0, 150);
+    assert_eq!(row.0, "150");
     Ok(())
 }
