@@ -2,7 +2,7 @@ use std::{time::{Duration, Instant}};
 use actix::prelude::*;
 use actix_web_actors::ws;
 
-use crate::{event::{self, CodeUpdate, Disconnect, Connect, CompileCode}, code_server::CodeServer, delta::Delta};
+use crate::{models::event::{self, CodeUpdate, Disconnect, Connect, CompileCode}, code_server::CodeServer, models::delta::Delta};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);

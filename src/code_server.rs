@@ -6,21 +6,21 @@ use actix::prelude::*;
 use actix::Recipient;
 
 use crate::config;
-use crate::event;
-use crate::event::CodeUpdate;
-use crate::event::CompileCode;
-use crate::event::Connect;
-use crate::event::Disconnect;
+use crate::models::event;
+use crate::models::event::CodeUpdate;
+use crate::models::event::CompileCode;
+use crate::models::event::Connect;
+use crate::models::event::Disconnect;
+use crate::models::event::ExecutionResponse;
 use crate::program_dto::{Language, ProgramRequest, ProgramResponse};
-use event::ExecutionResponse;
 
 type Client = Recipient<event::Message>;
-type Room = HashMap<usize, Client>;
+type CodeRoom = HashMap<usize, Client>;
 
 
 #[derive(Default)]
 pub struct CodeServer {
-  pub rooms: HashMap<String, Room>,
+  pub rooms: HashMap<String, CodeRoom>,
   rng: ThreadRng,
 }
 
@@ -41,7 +41,7 @@ impl CodeServer {
     self.rooms.insert(room_name.to_string(), HashMap::new());
   }
 
-  fn take_room(&mut self, room_name: &str) -> Option<Room> {
+  fn take_room(&mut self, room_name: &str) -> Option<CodeRoom> {
     self.insert_if_not_exist(room_name);
     let room = self.rooms.get_mut(room_name).unwrap();
     let room = std::mem::take(room);

@@ -14,13 +14,11 @@ use sqlx::postgres::PgPoolOptions;
 use dotenv::dotenv;
 use uuid::{uuid, Uuid};
 
-mod event;
-mod delta;
+mod models;
 mod code_session;
 mod code_server;
 mod config;
 mod program_dto;
-mod models;
 
 async fn websocket_handler(
     req: HttpRequest,
