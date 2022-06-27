@@ -59,7 +59,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 
-
+// TODO mettre ça sur le connect.
 async fn connect_db() -> Result<(), sqlx::Error> {
     let pool = PgPoolOptions::new()
     .max_connections(5)

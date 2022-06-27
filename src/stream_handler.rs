@@ -3,7 +3,7 @@ use std::time::Instant;
 use actix::{StreamHandler, ActorContext};
 use actix_web_actors::ws;
 
-use crate::{code_session::CodeSession, models::{event::{CompileCode, CodeUpdate}, delta::Delta}};
+use crate::code_session::CodeSession;
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
   fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
@@ -32,33 +32,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
                               ctx.text("!!! name is required");
                           }
                       }
-                      Some("/compile") => {
-                          let code = command.next();
-                          if code.is_none() {
-                              ctx.text("!!! code is required");
-                              return;
-                          }
-                          let code = code.unwrap();
-                          self.addr.do_send(CompileCode::new(self.id, code.to_owned(), self.room.clone()));
-                      }
-                      Some("/code_updates") => {
-                          let code = command.next();
-                          if code.is_none() {
-                              ctx.text("!!! code is required");
-                              return;
-                          }
-                          let code = code.unwrap();
-                          let change: Result<Vec<Delta>, serde_json::Error> = serde_json::from_str(code);
-                          let change = match change {
-                              Ok(change) => change,
-                              Err(err) => panic!("failed to parse changes: {}", err),
-                          };
-                          println!("change: {:?}", change);
-                          self.addr.do_send(CodeUpdate::new(self.id, code.to_owned(),self.room.clone()));
-                      }
+                      Some("/compile") => self.compile_code(&mut command, ctx),
+                      Some("/code_updates") => self.code_updates(command, ctx),
                       _ => ctx.text(format!("!!! unknown command: {msg:?}")),
                   }
-
                   return;
               }
           }
@@ -69,4 +46,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for CodeSession {
           _ => (),
       }
   }
+
+
 }
