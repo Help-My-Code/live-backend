@@ -6,7 +6,7 @@ use actix_web::{App, Error, HttpRequest, HttpResponse, HttpServer, middleware, w
 use actix::Addr;
 use actix_web_actors::ws;
 use actix::Actor;
-use code_server::CodeServer;
+use code_server::code_server::CodeServer;
 use code_session::CodeSession;
 use log::{debug, info};
 use rand::random;

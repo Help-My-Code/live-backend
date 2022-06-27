@@ -1,16 +1,9 @@
 use std::collections::HashMap;
-use log::info;
-use rand::Rng;
 use rand::prelude::ThreadRng;
-use actix::prelude::*;
 use actix::Recipient;
 
 use crate::config;
 use crate::models::event;
-use crate::models::event::CodeUpdate;
-use crate::models::event::CompileCode;
-use crate::models::event::Connect;
-use crate::models::event::Disconnect;
 use crate::models::event::ExecutionResponse;
 use crate::models::program_dto::{Language, ProgramRequest, ProgramResponse};
 
@@ -21,7 +14,7 @@ type CodeRoom = HashMap<usize, Client>;
 #[derive(Default)]
 pub struct CodeServer {
   pub rooms: HashMap<String, CodeRoom>,
-  rng: ThreadRng,
+  pub rng: ThreadRng,
 }
 
 impl CodeServer {
@@ -41,14 +34,14 @@ impl CodeServer {
     self.rooms.insert(room_name.to_string(), HashMap::new());
   }
 
-  fn take_room(&mut self, room_name: &str) -> Option<CodeRoom> {
+  pub fn take_room(&mut self, room_name: &str) -> Option<CodeRoom> {
     self.insert_if_not_exist(room_name);
     let room = self.rooms.get_mut(room_name).unwrap();
     let room = std::mem::take(room);
     Some(room)
   }
 
-  fn send_update_code(&mut self, message: &str, skip_id: usize, room_name: &str) {
+  pub fn send_update_code(&mut self, message: &str, skip_id: usize, room_name: &str) {
     let room = self.take_room(room_name).unwrap();
     self.rooms.insert(room_name.to_owned(), room.clone());
     for (id, client) in room {
@@ -60,7 +53,7 @@ impl CodeServer {
     ;
   }
 
-  fn execute_code(&mut self, code: String, room_name: &str) {
+  pub fn execute_code(&mut self, code: String, room_name: &str) {
     let program_dto = ProgramRequest {
       stdin: code,
       language: Language::DART,
@@ -92,50 +85,3 @@ impl CodeServer {
   }
 }
 
-impl Actor for CodeServer {
-  type Context = Context<Self>;
-}
-
-impl Handler<Connect> for CodeServer {
-  type Result = usize;
-
-  fn handle(&mut self, event: Connect, _ctx: &mut Self::Context) -> Self::Result {
-      let id = self.rng.gen::<usize>();
-      let mut room = self.take_room(event.room_name.as_str()).unwrap();
-      room.insert(id, event.addr);
-      self.rooms.insert(event.room_name.clone(), room);
-      info!("Websocket Client {} connected to room {}", id, event.room_name);
-      id
-  }
-}
-
-impl Handler<Disconnect> for CodeServer {
-  type Result = ();
-
-  fn handle(&mut self, msg: Disconnect, _ctx: &mut Self::Context) {
-      info!("Websocket Client {} disconnected", msg.id);
-  }
-}
-
-impl Handler<CodeUpdate> for CodeServer {
-  type Result = ();
-
-  fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
-    self.send_update_code( &msg.code, msg.id, &msg.room_name );
-  }
-
-}
-
-impl Handler<CompileCode> for CodeServer {
-  type Result = ();
-
-  fn handle(&mut self, msg: CompileCode, _ctx: &mut Self::Context) {
-    let code = msg.code.clone();
-    info!("Compiling code");
-    self.execute_code(code, &msg.room_name);
-  }
-
-}
-
-impl SystemService for CodeServer {}
-impl Supervised for CodeServer {}
