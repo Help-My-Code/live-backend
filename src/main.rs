@@ -16,6 +16,7 @@ use uuid::{uuid, Uuid};
 
 mod models;
 mod code_session;
+mod stream_handler;
 mod code_server;
 mod config;
 
