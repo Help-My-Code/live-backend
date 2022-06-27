@@ -1,3 +1,7 @@
+extern crate dotenv;
+#[macro_use]
+extern crate dotenv_codegen;
+
 use actix_web::{App, Error, HttpRequest, HttpResponse, HttpServer, middleware, web};
 use actix::Addr;
 use actix_web_actors::ws;
@@ -6,6 +10,8 @@ use code_server::CodeServer;
 use code_session::CodeSession;
 use log::{debug, info};
 use rand::random;
+use sqlx::postgres::PgPoolOptions;
+use dotenv::dotenv;
 
 mod event;
 mod delta;
@@ -30,8 +36,10 @@ async fn websocket_handler(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
-    std::env::set_var("RUST_LOG", "info");
-
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    dotenv().ok();
+    let res = connect_db().await;
+    println!("{:?}", res);
     let code_server = CodeServer::new().start();
 
     info!("start server on : {}:{}", config::EXPOSED_IP, config::PORT);
@@ -48,4 +56,21 @@ async fn main() -> std::io::Result<()> {
     .bind((config::EXPOSED_IP, config::PORT))?
     .run()
     .await
+}
+
+
+
+async fn connect_db() -> Result<(), sqlx::Error> {
+    let pool = PgPoolOptions::new()
+    .max_connections(5)
+    .connect(dotenv!("DATABASE_URL")).await;
+
+    // Make a simple query to return the given parameter (use a question mark `?` instead of `$1` for MySQL)
+    let row: (i64,) = sqlx::query_as("SELECT $1")
+    .bind(150_i64)
+    .fetch_one(&pool.unwrap()).await.unwrap();
+
+    println!("{:?}", row);
+    assert_eq!(row.0, 150);
+    Ok(())
 }
