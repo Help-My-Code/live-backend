@@ -35,7 +35,12 @@ impl Handler<CodeUpdate> for CodeServer {
   type Result = ();
 
   fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
-    self.send_update_code( &msg.code, msg.id, &msg.room_name );
+    let code_updates: String = match serde_json::to_string(&msg.code) {
+        Ok(code_updates) => code_updates,
+        Err(err) => panic!("failed to serialize code updates: {}", err),
+    };
+
+    self.send_update_code(&code_updates, msg.id, &msg.room_name );
   }
 
 }

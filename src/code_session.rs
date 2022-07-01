@@ -64,7 +64,7 @@ impl CodeSession {
             Err(err) => panic!("failed to parse changes: {}", err),
         };
         println!("change: {:?}", change);
-        self.addr.do_send(CodeUpdate::new(self.id, code.to_owned(),self.room.clone()));
+        self.addr.do_send(CodeUpdate::new(self.id, change, self.room.clone()));
     }
 
 }
