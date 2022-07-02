@@ -1,6 +1,11 @@
 # 1. This tells docker to use the Rust official image
 FROM rust:latest
 
+ARG COMPILER_URL
+
+ENV \
+COMPILER_URL=${COMPILER_URL}
+
 # 2. Copy the files in your machine to the Docker image
 COPY ./ ./
 

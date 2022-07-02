@@ -48,14 +48,13 @@ jobs:
           registry: ${{ secrets.DEV_DOCKER_HOST }}/${{ secrets.DEV_DOCKER_REGISTRY }}
           username: ${{ secrets.DEV_DOCKER_USERNAME }}
           password: ${{ secrets.DEV_DOCKER_REGISTRY_PASSWORD }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DEV_DOCKER_HOST }}/${{ secrets.DEV_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-snapshot-${{ secrets.DEV_VERSION }}:latest
-
+      - name: Build the tagged Docker image
+        run: "docker build \
+        -f Dockerfile . \
+        --build-arg COMPILER_URL=${{ secrets.DEV_COMPILER_URL }} \
+        --tag ${{ secrets.DEV_DOCKER_HOST }}/${{ secrets.DEV_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-snapshot-${{ secrets.DEV_VERSION }}:latest"
+      - name: Push the tagged Docker image
+        run: docker push ${{ secrets.DEV_DOCKER_HOST }}/${{ secrets.DEV_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-snapshot-${{ secrets.DEV_VERSION }}:latest
   deploy:
     name: deploy
     needs: push_to_registry
