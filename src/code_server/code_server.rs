@@ -1,6 +1,7 @@
 use actix::Recipient;
 use rand::prelude::ThreadRng;
 use std::collections::HashMap;
+use std::env;
 
 use crate::config;
 use crate::models::event;
@@ -63,7 +64,7 @@ impl CodeServer {
 
         actix_rt::spawn(async move {
             let res = client
-                .post(config::COMPILER_URL)
+                .post(env::var("COMPILER_URL").expect("doesn't find COMPILER_URL"))
                 .json(&serde_json::to_value(&program_dto).unwrap())
                 .send()
                 .await
