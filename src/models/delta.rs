@@ -6,7 +6,7 @@ pub struct Delta {
     end: Point,
     action: String,
     lines: Vec<String>,
-    timestamp: f64,
+    timestamp: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,7 +27,7 @@ mod tests {
             start: Point { row: 5, column: 17 },
             end: Point { row: 5, column: 19 },
             lines: vec!["Hello, world!".to_string()],
-            timestamp: 0.0,
+            timestamp: "0.0".to_string(),
         };
         let serialized = serde_json::to_string::<Delta>(&delta).unwrap();
         assert_eq!(serialized, "{\"action\":\"insert\",\"start\":{\"row\":5,\"column\":17},\"end\":{\"row\":5,\"column\":19},\"lines\":[\"Hello, world!\"]}");
@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_delta_deserialization() {
-        let serialized = "{\"action\":\"insert\",\"start\":{\"row\":5,\"column\":17},\"end\":{\"row\":5,\"column\":19},\"lines\":[\"Hello, world!\"], \"timestamp\":0.0}";
+        let serialized = "{\"action\":\"insert\",\"start\":{\"row\":5,\"column\":17},\"end\":{\"row\":5,\"column\":19},\"lines\":[\"Hello, world!\"], \"timestamp\":\"0.0\"}";
         let delta: Delta = serde_json::from_str(serialized).unwrap();
         assert_eq!(delta.action, "insert");
         assert_eq!(delta.start.row, 5);
@@ -43,6 +43,6 @@ mod tests {
         assert_eq!(delta.end.row, 5);
         assert_eq!(delta.end.column, 19);
         assert_eq!(delta.lines[0], "Hello, world!");
-        assert_eq!(delta.timestamp, 0.0);
+        assert_eq!(delta.timestamp, "0.0".to_string());
     }
 }
