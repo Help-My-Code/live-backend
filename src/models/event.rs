@@ -17,7 +17,11 @@ pub struct CodeUpdate {
 
 impl CodeUpdate {
     pub fn new(id: usize, code: Vec<Delta>, room_name: String) -> Self {
-        CodeUpdate { id, code, room_name }
+        CodeUpdate {
+            id,
+            code,
+            room_name,
+        }
     }
 }
 
@@ -31,7 +35,11 @@ pub struct CompileCode {
 
 impl CompileCode {
     pub fn new(id: usize, code: String, room_name: String) -> Self {
-        CompileCode { id, code, room_name }
+        CompileCode {
+            id,
+            code,
+            room_name,
+        }
     }
 }
 

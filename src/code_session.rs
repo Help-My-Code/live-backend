@@ -1,8 +1,14 @@
-use std::time::{Duration, Instant};
 use actix::prelude::*;
 use actix_web_actors::ws;
+use std::time::{Duration, Instant};
 
-use crate::{models::{event::{self, Disconnect, Connect, CompileCode, CodeUpdate}, delta::Delta},  code_server::code_server::CodeServer};
+use crate::{
+    code_server::code_server::CodeServer,
+    models::{
+        delta::Delta,
+        event::{self, CodeUpdate, CompileCode, Connect, Disconnect},
+    },
+};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -41,17 +47,29 @@ impl CodeSession {
         });
     }
 
-    pub fn compile_code(&mut self, command: &mut std::str::SplitN<char>, ctx: &mut ws::WebsocketContext<CodeSession>) {
+    pub fn compile_code(
+        &mut self,
+        command: &mut std::str::SplitN<char>,
+        ctx: &mut ws::WebsocketContext<CodeSession>,
+    ) {
         let code = command.next();
         if code.is_none() {
             ctx.text("!!! code is required");
             return;
         }
         let code = code.unwrap();
-        self.addr.do_send(CompileCode::new(self.id, code.to_owned(), self.room.clone()));
+        self.addr.do_send(CompileCode::new(
+            self.id,
+            code.to_owned(),
+            self.room.clone(),
+        ));
     }
 
-    pub fn code_updates(&mut self, mut command: std::str::SplitN<char>, ctx: &mut ws::WebsocketContext<CodeSession>) {
+    pub fn code_updates(
+        &mut self,
+        mut command: std::str::SplitN<char>,
+        ctx: &mut ws::WebsocketContext<CodeSession>,
+    ) {
         let code = command.next();
         if code.is_none() {
             ctx.text("!!! code is required");
@@ -64,9 +82,9 @@ impl CodeSession {
             Err(err) => panic!("failed to parse changes: {}", err),
         };
         println!("change: {:?}", change);
-        self.addr.do_send(CodeUpdate::new(self.id, change, self.room.clone()));
+        self.addr
+            .do_send(CodeUpdate::new(self.id, change, self.room.clone()));
     }
-
 }
 
 impl Handler<event::Message> for CodeSession {
@@ -107,4 +125,3 @@ impl Actor for CodeSession {
         Running::Stop
     }
 }
-
