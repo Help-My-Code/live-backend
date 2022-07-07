@@ -17,8 +17,6 @@ jobs:
       matrix:
         toolchain:
           - stable
-          - beta
-          - nightly
 
     steps:
       - uses: actions/checkout@v3
@@ -50,9 +48,9 @@ jobs:
           password: ${{ secrets.DEV_DOCKER_REGISTRY_PASSWORD }}
       - name: Build the tagged Docker image
         run: "docker build \
-        -f Dockerfile . \
-        --build-arg COMPILER_URL=${{ secrets.DEV_COMPILER_URL }} \
-        --tag ${{ secrets.DEV_DOCKER_HOST }}/${{ secrets.DEV_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-snapshot-${{ secrets.DEV_VERSION }}:latest"
+          -f Dockerfile . \
+          --build-arg COMPILER_URL=${{ secrets.DEV_COMPILER_URL }} \
+          --tag ${{ secrets.DEV_DOCKER_HOST }}/${{ secrets.DEV_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-snapshot-${{ secrets.DEV_VERSION }}:latest"
       - name: Push the tagged Docker image
         run: docker push ${{ secrets.DEV_DOCKER_HOST }}/${{ secrets.DEV_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-snapshot-${{ secrets.DEV_VERSION }}:latest
   deploy:
@@ -63,7 +61,7 @@ jobs:
       - uses: actions/checkout@v1
       - uses: appleboy/ssh-action@master
         with:
-          host: '${{ secrets.K8S_MASTER_HOST_IP }}'
-          username: '${{ secrets.K8S_MASTER_USERNAME }}'
-          password: '${{ secrets.K8S_MASTER_PASSWORD }}'
+          host: "${{ secrets.K8S_MASTER_HOST_IP }}"
+          username: "${{ secrets.K8S_MASTER_USERNAME }}"
+          password: "${{ secrets.K8S_MASTER_PASSWORD }}"
           script: cd k8s-pmc/ && git pull && helm upgrade --recreate-pods ${{ secrets.PROJECT_NAME }}-dev ${{ secrets.PROJECT_NAME }}/ -f ${{ secrets.PROJECT_NAME }}/values-dev.yaml
