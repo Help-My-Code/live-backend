@@ -1,39 +1,14 @@
-name: CI/CD
-
+name: CI/CD - DEPLOY
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
-
-env:
-  CARGO_TERM_COLOR: always
+    types:
+      - closed
 
 jobs:
-  build:
-    name: build
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [16.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test
-
   push_to_registry:
     name: push_to_registry
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -53,9 +28,9 @@ jobs:
           password: ${{ secrets.PROD_DOCKER_REGISTRY_PASSWORD }}
       - name: Build the tagged Docker image
         run: "docker build \
-        -f Dockerfile . \
-        --build-arg COMPILER_URL=${{ secrets.PROD_COMPILER_URL }} \
-        --tag ${{ secrets.PROD_DOCKER_HOST }}/${{ secrets.PROD_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-snapshot-${{ secrets.PROD_VERSION }}:latest"
+       -f Dockerfile . \
+       --build-arg COMPILER_URL=${{ secrets.PROD_COMPILER_URL }} \
+       --tag ${{ secrets.PROD_DOCKER_HOST }}/${{ secrets.PROD_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-snapshot-${{ secrets.PROD_VERSION }}:latest"
       - name: Push the tagged Docker image
         run: docker push ${{ secrets.PROD_DOCKER_HOST }}/${{ secrets.PROD_DOCKER_REGISTRY }}/${{ secrets.PROJECT_NAME }}-${{ secrets.PROD_VERSION }}:latest
   deploy:
