@@ -9,7 +9,6 @@ on:
 jobs:
   push_to_registry:
     name: push_to_registry
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
