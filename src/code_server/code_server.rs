@@ -3,7 +3,6 @@ use rand::prelude::ThreadRng;
 use std::collections::HashMap;
 use std::env;
 
-use crate::config;
 use crate::models::event;
 use crate::models::event::ExecutionResponse;
 use crate::models::program_dto::{Language, ProgramRequest, ProgramResponse};
@@ -53,6 +52,8 @@ impl CodeServer {
     }
 
     pub fn execute_code(&mut self, code: String, room_name: &str) {
+        let compiler_url =
+            env::var("COMPILER_URL").unwrap_or(String::from("http://localhost:3004/program"));
         let program_dto = ProgramRequest {
             stdin: code,
             language: Language::DART,
@@ -64,13 +65,13 @@ impl CodeServer {
 
         actix_rt::spawn(async move {
             let res = client
-                .post(env::var("COMPILER_URL").expect("doesn't find COMPILER_URL"))
+                .post(compiler_url)
                 .json(&serde_json::to_value(&program_dto).unwrap())
                 .send()
-                .await
-                .unwrap()
-                .json::<ProgramResponse>()
                 .await;
+            println!("res {:?}", res);
+            let res = res.unwrap().json::<ProgramResponse>().await;
+            println!("program res {:?}", res);
             match res {
                 Ok(program_response) => {
                     let execution = ExecutionResponse {
@@ -82,7 +83,10 @@ impl CodeServer {
                             .do_send(event::Message(serde_json::to_string(&execution).unwrap()));
                     }
                 }
-                Err(_) => todo!(),
+                Err(err) => {
+                    println!("ERROR {:?}", err);
+                    // addr.do_send(event::Message(serde_json::to_string(&err));
+                }
             };
         });
     }
