@@ -14,13 +14,15 @@ pub struct Message(pub String);
 pub struct CodeUpdate {
     pub id: usize,
     pub code: Vec<Delta>,
+    pub user: User,
     pub room_name: String,
 }
 
 impl CodeUpdate {
-    pub fn new(id: usize, code: Vec<Delta>, room_name: String) -> Self {
+    pub fn new(id: usize, code: Vec<Delta>, room_name: String, user: User) -> Self {
         CodeUpdate {
             id,
+            user,
             code,
             room_name,
         }
@@ -79,13 +81,12 @@ pub enum WsMessage {
         room_id: Uuid,
     },
     CodeUpdate {
-        user_id: String,
-        content: Delta,
+        user: User,
+        content: Vec<Delta>,
     },
     CompilationEvent {
         state: CompilationEvent,
         stdout: Option<String>,
     },
-
 }
 

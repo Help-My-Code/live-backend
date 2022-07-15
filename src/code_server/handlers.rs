@@ -2,7 +2,7 @@ use actix::{Actor, Context, Handler, Supervised, SystemService};
 use log::info;
 use rand::Rng;
 
-use crate::models::event::{CodeUpdate, CompileCode, Connect, Disconnect};
+use crate::models::event::{WsMessage, CodeUpdate, CompileCode, Connect, Disconnect};
 
 use super::code_server::CodeServer;
 
@@ -38,7 +38,8 @@ impl Handler<CodeUpdate> for CodeServer {
     type Result = ();
 
     fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
-        let code_updates: String = match serde_json::to_string(&msg.code) {
+        let message = WsMessage::CodeUpdate { user: msg.user, content: msg.code };
+        let code_updates: String = match serde_json::to_string(&message) {
             Ok(code_updates) => code_updates,
             Err(err) => panic!("failed to serialize code updates: {}", err),
         };
@@ -53,6 +54,7 @@ impl Handler<CompileCode> for CodeServer {
     fn handle(&mut self, msg: CompileCode, _ctx: &mut Self::Context) {
         let code = msg.code.clone();
         info!("Compiling code");
+        // TODO add start event
         self.execute_code(code, &msg.room_name);
     }
 }
