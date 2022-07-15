@@ -82,21 +82,21 @@ pub enum WsMessage {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatMessage {
-    user: User,
-    content: String,
-    room_id: Uuid,
+    pub user: User,
+    pub content: String,
+    pub room_id: Uuid,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CodeUpdateOutput {
-    user: User,
-    content: Vec<Delta>,
+    pub user: User,
+    pub content: Vec<Delta>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompilationEvent {
-    state: CompilationState,
-    stdout: Option<String>,
+    pub state: CompilationState,
+    pub stdout: Option<String>,
 }
 
 

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::env;
 
 use crate::models::event;
-use crate::models::event::WsMessage;
+use crate::models::event::{WsMessage, CompilationEvent, CompilationState};
 use crate::models::program_dto::{Language, ProgramRequest, ProgramResponse};
 
 type Client = Recipient<event::Message>;
@@ -74,10 +74,10 @@ impl CodeServer {
             println!("program res {:?}", res);
             match res {
                 Ok(program_response) => {
-                    let execution = WsMessage::CompilationEvent {
-                        state: event::CompilationEvent::END,
+                    let execution = WsMessage::CompilationEvent(CompilationEvent {
+                        state: CompilationState::END,
                         stdout: Some(program_response.stdout),
-                    };
+                    });
                     println!("execution response {:?}", execution);
                     for (_id, addr) in room_copy {
                         let _ = addr
@@ -92,3 +92,4 @@ impl CodeServer {
         });
     }
 }
+
