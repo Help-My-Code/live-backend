@@ -1,7 +1,9 @@
 use actix::prelude::*;
-use serde::Serialize;
-
+use serde::{Serialize, Deserialize};
+use uuid::Uuid;
+use crate::models::user::User;
 use super::delta::Delta;
+
 
 #[derive(Message, Debug)]
 #[rtype(usize)]
@@ -48,6 +50,7 @@ impl CompileCode {
 pub struct Connect {
     pub addr: Recipient<Message>,
     pub room_name: String,
+    pub user_id: User,
 }
 
 #[derive(Message)]
@@ -61,3 +64,28 @@ pub struct Disconnect {
 pub struct ExecutionResponse {
     pub stdout: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum CompilationEvent {
+    START,
+    END,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum WsMessage {
+    Message {
+        user_id: User,
+        content: String,
+        room_id: Uuid,
+    },
+    CodeUpdate {
+        user_id: String,
+        content: Delta,
+    },
+    CompilationEvent {
+        state: CompilationEvent,
+        stdout: Option<String>,
+    },
+
+}
+

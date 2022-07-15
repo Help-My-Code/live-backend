@@ -6,6 +6,7 @@ use crate::{
     code_server::code_server::CodeServer,
     models::{
         delta::Delta,
+        user::User,
         event::{self, CodeUpdate, CompileCode, Connect, Disconnect},
     },
 };
@@ -108,6 +109,7 @@ impl Actor for CodeSession {
             .send(Connect {
                 addr: addr.recipient(),
                 room_name: self.room.clone(),
+                user_id: User::new(uuid::Uuid::new_v4()),
             })
             .into_actor(self)
             .then(|res, act, ctx| {

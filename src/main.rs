@@ -14,10 +14,10 @@ use rand::random;
 use sqlx::postgres::PgPoolOptions;
 use uuid::{uuid, Uuid};
 
+mod models;
 mod code_server;
 mod code_session;
 mod config;
-mod models;
 mod stream_handler;
 
 async fn websocket_handler(
