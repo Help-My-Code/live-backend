@@ -68,25 +68,35 @@ pub struct ExecutionResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum CompilationEvent {
+pub enum CompilationState {
     START,
     END,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum WsMessage {
-    Message {
-        user_id: User,
-        content: String,
-        room_id: Uuid,
-    },
-    CodeUpdate {
-        user: User,
-        content: Vec<Delta>,
-    },
-    CompilationEvent {
-        state: CompilationEvent,
-        stdout: Option<String>,
-    },
+    Message(ChatMessage),
+    CodeUpdate(CodeUpdateOutput),
+    CompilationEvent(CompilationEvent),
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatMessage {
+    user: User,
+    content: String,
+    room_id: Uuid,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CodeUpdateOutput {
+    user: User,
+    content: Vec<Delta>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CompilationEvent {
+    state: CompilationState,
+    stdout: Option<String>,
+}
+
 
