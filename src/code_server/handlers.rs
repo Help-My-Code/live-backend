@@ -39,7 +39,7 @@ impl Handler<CodeUpdate> for CodeServer {
 
     fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
         let message = WsMessage::CodeUpdate(CodeUpdateOutput { user: msg.user, content: msg.code });
-            let code_updates: String = match serde_json::to_string(&message) {
+        let code_updates: String = match serde_json::to_string(&message) {
             Ok(code_updates) => code_updates,
             Err(err) => panic!("failed to serialize code updates: {}", err),
         };

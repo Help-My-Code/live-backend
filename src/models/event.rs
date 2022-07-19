@@ -31,12 +31,12 @@ pub struct Message(pub String);
 pub struct CodeUpdate {
     pub id: usize,
     pub code: Vec<Delta>,
-    pub user: User,
+    pub user: String,
     pub room_id: String,
 }
 
 impl CodeUpdate {
-    pub fn new(id: usize, code: Vec<Delta>, room_id: String, user: User) -> Self {
+    pub fn new(id: usize, code: Vec<Delta>, room_id: String, user: String) -> Self {
         CodeUpdate {
             id,
             user,
@@ -101,14 +101,14 @@ pub enum WsMessage {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatMessage {
-    pub user: User,
+    pub user: String,
     pub content: String,
     pub room_id: Uuid,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CodeUpdateOutput {
-    pub user: User,
+    pub user: String,
     pub content: Vec<Delta>,
 }
 

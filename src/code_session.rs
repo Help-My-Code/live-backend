@@ -1,14 +1,13 @@
 use actix::prelude::*;
 use actix_web_actors::ws;
 use std::time::{Duration, Instant};
-use uuid::Uuid;
 
 use crate::{
     code_server::code_server::CodeServer,
     models::{
         delta::Delta,
         user::User,
-        event::{self, Language, CodeUpdate, CompileCode, Connect, Disconnect},
+        event::{self, Language, CodeUpdate, CompileCode, Connect, Disconnect, WsMessage, CodeUpdateOutput},
     },
     redis::{add_deltas, get_current_context_for_room},
 };
@@ -43,14 +42,8 @@ impl CodeSession {
             return;
         }
         let deltas = deltas.unwrap();
-        let user_id = self.user.as_str();
-        let code_updates = CodeUpdate::new(
-            self.id,
-            deltas,
-            self.room.clone(),
-            User::new(Uuid::parse_str(user_id).unwrap()),
-        );
-        let message = serde_json::to_string(&code_updates).unwrap();
+        let message = WsMessage::CodeUpdate(CodeUpdateOutput { user: self.user.clone(), content: deltas });
+        let message = serde_json::to_string(&message).unwrap();
         ctx.text(message);
     }
 
@@ -119,14 +112,12 @@ impl CodeSession {
             Err(err) => println!("{:?}", err),
         }
         // println!("change: {:?}", change);
-        // TODO add user_id
-        let user_id = self.user.as_str();
         self.addr
             .do_send(CodeUpdate::new(
                 self.id,
                 change,
                 self.room.clone(),
-                User::new(Uuid::parse_str(user_id).unwrap()),
+                self.user.clone(),
             ));
     }
 }
@@ -165,6 +156,7 @@ impl Actor for CodeSession {
             .wait(ctx);
         self.send_current_state(ctx);
     }
+
     fn stopping(&mut self, _: &mut Self::Context) -> Running {
         println!("Websocket Client stopping");
         self.addr.do_send(Disconnect { id: self.id });
