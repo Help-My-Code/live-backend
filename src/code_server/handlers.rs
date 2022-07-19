@@ -15,12 +15,12 @@ impl Handler<Connect> for CodeServer {
 
     fn handle(&mut self, event: Connect, _ctx: &mut Self::Context) -> Self::Result {
         let id = self.rng.gen::<usize>();
-        let mut room = self.take_room(event.room_name.as_str()).unwrap();
+        let mut room = self.take_room(event.room_id.as_str()).unwrap();
         room.insert(id, event.addr);
-        self.rooms.insert(event.room_name.clone(), room);
+        self.rooms.insert(event.room_id.clone(), room);
         info!(
             "Websocket Client {} connected to room {}",
-            id, event.room_name
+            id, event.room_id
         );
         id
     }
@@ -44,7 +44,7 @@ impl Handler<CodeUpdate> for CodeServer {
             Err(err) => panic!("failed to serialize code updates: {}", err),
         };
 
-        self.send_update_code(&code_updates, msg.id, &msg.room_name);
+        self.send_update_code(&code_updates, msg.id, &msg.room_id);
     }
 }
 
@@ -55,7 +55,7 @@ impl Handler<CompileCode> for CodeServer {
         let code = msg.code.clone();
         info!("Compiling code");
         // TODO add start event
-        self.execute_code(code, &msg.room_name);
+        self.execute_code(code, &msg.room_id, msg.language);
     }
 }
 

@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::env;
 
 use crate::models::event;
-use crate::models::event::{WsMessage, CompilationEvent, CompilationState};
-use crate::models::program_dto::{Language, ProgramRequest, ProgramResponse};
+use crate::models::event::{WsMessage, Language, CompilationEvent, CompilationState};
+use crate::models::program_dto::{ProgramRequest, ProgramResponse};
 
 type Client = Recipient<event::Message>;
 type CodeRoom = HashMap<usize, Client>;
@@ -24,44 +24,44 @@ impl CodeServer {
         }
     }
 
-    fn insert_if_not_exist(&mut self, room_name: &str) {
-        let room = self.rooms.get(room_name);
+    fn insert_if_not_exist(&mut self, room_id: &str) {
+        let room = self.rooms.get(room_id);
         if room.is_some() {
-            println!("Room {} {:?} already exists", room_name, room);
+            println!("Room {} {:?} already exists", room_id, room);
             return;
         }
-        self.rooms.insert(room_name.to_string(), HashMap::new());
+        self.rooms.insert(room_id.to_string(), HashMap::new());
     }
 
-    pub fn take_room(&mut self, room_name: &str) -> Option<CodeRoom> {
-        self.insert_if_not_exist(room_name);
-        let room = self.rooms.get_mut(room_name).unwrap();
+    pub fn take_room(&mut self, room_id: &str) -> Option<CodeRoom> {
+        self.insert_if_not_exist(room_id);
+        let room = self.rooms.get_mut(room_id).unwrap();
         let room = std::mem::take(room);
         Some(room)
     }
 
-    pub fn send_update_code(&mut self, message: &str, skip_id: usize, room_name: &str) {
-        let room = self.take_room(room_name).unwrap();
-        self.rooms.insert(room_name.to_owned(), room.clone());
+    pub fn send_update_code(&mut self, message: &str, skip_id: usize, room_id: &str) {
+        let room = self.take_room(room_id).unwrap();
+        self.rooms.insert(room_id.to_owned(), room.clone());
         for (id, client) in room {
-            println!("Sending update code to client {} {:?}", id, client);
+            // println!("Sending update code to client {} {:?}", id, client);
             if id != skip_id {
                 client.do_send(event::Message(message.to_owned()));
             }
         }
     }
 
-    pub fn execute_code(&mut self, code: String, room_name: &str) {
+    pub fn execute_code(&mut self, code: String, room_id: &str, language: Language) {
         let compiler_url =
             env::var("COMPILER_URL").unwrap_or(String::from("http://localhost:3004/program"));
         let program_dto = ProgramRequest {
             stdin: code,
-            language: Language::DART,
+            language,
         };
         let client = reqwest::Client::new();
-        let room = self.take_room(room_name).unwrap();
+        let room = self.take_room(room_id).unwrap();
         let room_copy = room.clone();
-        self.rooms.insert(room_name.to_owned(), room);
+        self.rooms.insert(room_id.to_owned(), room);
 
         actix_rt::spawn(async move {
             let res = client
