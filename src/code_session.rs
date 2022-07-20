@@ -6,7 +6,6 @@ use crate::{
     code_server::code_server::CodeServer,
     models::{
         delta::Delta,
-        user::User,
         event::{self, Language, CodeUpdate, CompileCode, Connect, Disconnect, WsMessage, CodeUpdateOutput},
     },
     redis::{add_deltas, get_current_context_for_room},
@@ -42,7 +41,10 @@ impl CodeSession {
             return;
         }
         let deltas = deltas.unwrap();
-        let message = WsMessage::CodeUpdate(CodeUpdateOutput { user: self.user.clone(), content: deltas });
+        let message = WsMessage::CodeUpdate(CodeUpdateOutput {
+            user: self.user.clone(),
+            content: deltas,
+        });
         let message = serde_json::to_string(&message).unwrap();
         ctx.text(message);
     }
@@ -108,7 +110,7 @@ impl CodeSession {
         };
         let redis_result = add_deltas(&change, &self.room);
         match redis_result {
-            Ok(_) => println!("redis recieve"),
+            Ok(_) => {},
             Err(err) => println!("{:?}", err),
         }
         // println!("change: {:?}", change);
@@ -143,7 +145,7 @@ impl Actor for CodeSession {
             .send(Connect {
                 addr: addr.recipient(),
                 room_id: self.room.clone(),
-                user_id: User::new(uuid::Uuid::new_v4()),
+                user_id: self.user.clone(),
             })
             .into_actor(self)
             .then(|res, act, ctx| {

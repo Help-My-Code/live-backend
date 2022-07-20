@@ -1,7 +1,6 @@
 use actix::prelude::*;
 use serde::{Serialize, Deserialize};
 use uuid::Uuid;
-use crate::models::user::User;
 use super::delta::Delta;
 
 #[derive(Debug, Serialize)]
@@ -71,7 +70,7 @@ impl CompileCode {
 pub struct Connect {
     pub addr: Recipient<Message>,
     pub room_id: String,
-    pub user_id: User,
+    pub user_id: String,
 }
 
 #[derive(Message)]
@@ -97,6 +96,7 @@ pub enum WsMessage {
     Message(ChatMessage),
     CodeUpdate(CodeUpdateOutput),
     CompilationEvent(CompilationEvent),
+    Init(CurrentState),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -118,3 +118,9 @@ pub struct CompilationEvent {
     pub stdout: Option<String>,
 }
 
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CurrentState {
+    pub code_updates: Vec<Delta>,
+    pub message: Vec<String>,
+}
