@@ -6,7 +6,7 @@ pub fn add_deltas(deltas: &Vec<Delta>, room_id: &String) -> redis::RedisResult<(
     let mut con = client.get_connection()?;
     for delta in deltas {
         let delta = serde_json::to_string(&delta).unwrap();
-        redis::cmd("LPUSH")
+        redis::cmd("RPUSH")
             .arg(format!("{}_{}", room_id, "delta"))
             .arg(delta)
             .execute(&mut con);
