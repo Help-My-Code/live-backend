@@ -7,6 +7,7 @@ pub struct Delta {
     action: String,
     lines: Vec<String>,
     timestamp: String,
+    hash: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,14 +29,15 @@ mod tests {
             end: Point { row: 5, column: 19 },
             lines: vec!["Hello, world!".to_string()],
             timestamp: "0.0".to_string(),
+            hash: "wfnweofhoawbAPWRB".to_string(),// SHA1 hash of the delta
         };
         let serialized = serde_json::to_string::<Delta>(&delta).unwrap();
-        assert_eq!(serialized, "{\"action\":\"insert\",\"start\":{\"row\":5,\"column\":17},\"end\":{\"row\":5,\"column\":19},\"lines\":[\"Hello, world!\"]}");
+        assert_eq!(serialized, "{\"start\":{\"row\":5,\"column\":17},\"end\":{\"row\":5,\"column\":19},\"action\":\"insert\",\"lines\":[\"Hello, world!\"],\"timestamp\":\"0.0\",\"hash\":\"wfnweofhoawbAPWRB\"}");
     }
 
     #[test]
     fn test_delta_deserialization() {
-        let serialized = "{\"action\":\"insert\",\"start\":{\"row\":5,\"column\":17},\"end\":{\"row\":5,\"column\":19},\"lines\":[\"Hello, world!\"], \"timestamp\":\"0.0\"}";
+        let serialized = "{\"action\":\"insert\",\"start\":{\"row\":5,\"column\":17},\"end\":{\"row\":5,\"column\":19},\"lines\":[\"Hello, world!\"], \"timestamp\":\"0.0\", \"hash\":\"wfnweofhoawbAPWRB\"}";
         let delta: Delta = serde_json::from_str(serialized).unwrap();
         assert_eq!(delta.action, "insert");
         assert_eq!(delta.start.row, 5);
