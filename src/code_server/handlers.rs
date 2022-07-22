@@ -2,7 +2,7 @@ use actix::{Actor, Context, Handler, Supervised, SystemService};
 use log::info;
 use rand::Rng;
 
-use crate::models::event::{CodeUpdate, CompileCode, Connect, Disconnect};
+use crate::models::event::{WsMessage, CodeUpdate, CompileCode, CodeUpdateOutput, Connect, Disconnect};
 
 use super::code_server::CodeServer;
 
@@ -15,12 +15,12 @@ impl Handler<Connect> for CodeServer {
 
     fn handle(&mut self, event: Connect, _ctx: &mut Self::Context) -> Self::Result {
         let id = self.rng.gen::<usize>();
-        let mut room = self.take_room(event.room_name.as_str()).unwrap();
+        let mut room = self.take_room(event.room_id.as_str()).unwrap();
         room.insert(id, event.addr);
-        self.rooms.insert(event.room_name.clone(), room);
+        self.rooms.insert(event.room_id.clone(), room);
         info!(
             "Websocket Client {} connected to room {}",
-            id, event.room_name
+            id, event.room_id
         );
         id
     }
@@ -38,12 +38,13 @@ impl Handler<CodeUpdate> for CodeServer {
     type Result = ();
 
     fn handle(&mut self, msg: CodeUpdate, _ctx: &mut Self::Context) {
-        let code_updates: String = match serde_json::to_string(&msg.code) {
+        let message = WsMessage::CodeUpdate(CodeUpdateOutput { user: msg.user, content: msg.code });
+        let code_updates: String = match serde_json::to_string(&message) {
             Ok(code_updates) => code_updates,
             Err(err) => panic!("failed to serialize code updates: {}", err),
         };
 
-        self.send_update_code(&code_updates, msg.id, &msg.room_name);
+        self.send_update_code(&code_updates, msg.id, &msg.room_id);
     }
 }
 
@@ -53,7 +54,8 @@ impl Handler<CompileCode> for CodeServer {
     fn handle(&mut self, msg: CompileCode, _ctx: &mut Self::Context) {
         let code = msg.code.clone();
         info!("Compiling code");
-        self.execute_code(code, &msg.room_name);
+        // TODO add start event
+        self.execute_code(code, &msg.room_id, msg.language);
     }
 }
 

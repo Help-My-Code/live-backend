@@ -1,5 +1,4 @@
 extern crate dotenv;
-#[macro_use]
 extern crate dotenv_codegen;
 
 use actix::Actor;
@@ -9,26 +8,24 @@ use actix_web_actors::ws;
 use code_server::code_server::CodeServer;
 use code_session::CodeSession;
 use dotenv::dotenv;
-use log::{debug, info};
+use log::info;
 use rand::random;
-use sqlx::postgres::PgPoolOptions;
-use uuid::{uuid, Uuid};
 
 mod code_server;
 mod code_session;
 mod config;
 mod models;
+mod redis;
 mod stream_handler;
 
 async fn websocket_handler(
     req: HttpRequest,
     stream: web::Payload,
     srv: web::Data<Addr<CodeServer>>,
-    path: web::Path<String>,
+    path: web::Path<(String, String)>,
 ) -> Result<HttpResponse, Error> {
-    debug!("{:?}", req);
-    let room_name = path.into_inner();
-    let code_session = CodeSession::new(random::<usize>(), srv.get_ref().clone(), room_name, None);
+    let (user_id, room_id) = path.into_inner();
+    let code_session = CodeSession::new(random::<usize>(), srv.get_ref().clone(), room_id, user_id);
     ws::start(code_session, &req, stream)
 }
 
@@ -37,8 +34,6 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
     std::env::set_var("RUST_LOG", "actix_web=info");
     dotenv().ok();
-    // let res = connect_db().await;
-    // println!("{:?}", res);
     let code_server = CodeServer::new().start();
 
     info!("start server on : {}:{}", config::EXPOSED_IP, config::PORT);
@@ -46,7 +41,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(code_server.clone()))
             .wrap(middleware::Logger::default())
-            .route("/ws/{room_id}", web::get().to(websocket_handler))
+            .route(
+                "/ws/user/{user_id}/room/{room_id}",
+                web::get().to(websocket_handler),
+            )
             .service(
                 web::resource("/hello").to(|| async { HttpResponse::Ok().body("Hello world!") }),
             )
@@ -55,26 +53,4 @@ async fn main() -> std::io::Result<()> {
     .bind((config::EXPOSED_IP, config::PORT))?
     .run()
     .await
-}
-
-// TODO mettre ça sur le connect.
-async fn connect_db() -> Result<(), sqlx::Error> {
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(dotenv!("DATABASE_URL"))
-        .await;
-
-    let row: (Uuid, Uuid, Uuid, String, String) = sqlx::query_as(
-        "SELECT room.id, room.content_id, room.program_id, program.stdin, program.stdout FROM room
-    LEFT JOIN program on program_id = program.id
-    WHERE room.id = $1",
-    )
-    .bind(uuid!("298f6b5c-0975-41b4-ab29-2cedc6cb0be2"))
-    .fetch_one(&pool.unwrap())
-    .await
-    .unwrap();
-
-    println!("{:?}", row);
-    assert_eq!(row.0, uuid!("298f6b5c-0975-41b4-ab29-2cedc6cb0be2"));
-    Ok(())
 }

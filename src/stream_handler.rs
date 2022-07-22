@@ -12,21 +12,13 @@ impl CodeSession {
         text: ByteString,
         ctx: &mut ws::WebsocketContext<CodeSession>,
     ) {
-        println!("Websocket Server received {:?}", text);
+        // println!("Websocket Server received {:?}", text);
         let msg = text.trim();
 
         if msg.starts_with('/') {
             let mut command = msg.splitn(2, ' ');
 
             match command.next() {
-                Some("/name") => {
-                    if let Some(name) = command.next() {
-                        self.name = Some(name.to_owned());
-                        ctx.text(format!("name changed to: {name}"));
-                    } else {
-                        ctx.text("!!! name is required");
-                    }
-                }
                 Some("/compile") => self.compile_code(&mut command, ctx),
                 Some("/code_updates") => self.code_updates(command, ctx),
                 _ => ctx.text(format!("!!! unknown command: {msg:?}")),
