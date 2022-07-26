@@ -1,11 +1,5 @@
 use serde::{Serialize, Deserialize};
-
-#[derive(Debug, Serialize)]
-pub enum Language {
-  DART,
-  PYTHON,
-  C,
-}
+use crate::models::event::Language;
 
 #[derive(Serialize, Debug)]
 pub struct ProgramRequest {
@@ -17,3 +11,4 @@ pub struct ProgramRequest {
 pub struct ProgramResponse {
   pub stdout: String,
 }
+
