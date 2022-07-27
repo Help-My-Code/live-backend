@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::env;
 
 use crate::models::event;
-use crate::models::event::{WsMessage, Language, CompilationEvent, CompilationState};
+use crate::models::event::{CompilationEvent, CompilationState, Language, WsMessage};
 use crate::models::program_dto::{ProgramRequest, ProgramResponse};
 
 type Client = Recipient<event::Message>;
@@ -54,6 +54,7 @@ impl CodeServer {
     pub fn execute_code(&mut self, code: String, room_id: &str, language: Language) {
         let compiler_url =
             env::var("COMPILER_URL").unwrap_or(String::from("http://localhost:3004/program"));
+        let compiler_url = String::from("https:://backend-compiler.pimp-my-code.xyz/program");
         let program_dto = ProgramRequest {
             stdin: code,
             language,
@@ -92,4 +93,3 @@ impl CodeServer {
         });
     }
 }
-
