@@ -11,3 +11,7 @@ Live backend is a service for handling Websocket communication with PimpMyCode l
 
 - Actix and Actix Web, tokio for async handling of exchange based on worker.
 - Redis for save state of the room
+
+## Scailing
+
+This application is stateful she know all other connection for send upadte to them. 
