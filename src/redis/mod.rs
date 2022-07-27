@@ -1,8 +1,11 @@
 extern crate redis;
+use std::env;
+
 use crate::{config::REDIS_URL, models::delta::Delta};
 
 pub fn add_deltas(deltas: &Vec<Delta>, room_id: &String) -> redis::RedisResult<()> {
-    let client = redis::Client::open(REDIS_URL)?;
+    let redis_url = env::var("REDIS_URL").unwrap_or(String::from("redis:127.0.0.1:6379"));
+    let client = redis::Client::open(redis_url)?;
     let mut con = client.get_connection()?;
     for delta in deltas {
         let delta = serde_json::to_string(&delta).unwrap();
